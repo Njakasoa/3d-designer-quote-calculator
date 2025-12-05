@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur de devis | Designer 3D Freelance</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #11131a;
+      --accent: #5dd6ff;
+      --accent-2: #a88bff;
+      --text: #e6eef8;
+      --muted: #8a94a7;
+      --border: #1c1f2b;
+      --success: #27c499;
+      --warn: #f9b572;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(93, 214, 255, 0.08), transparent 25%),
+                  radial-gradient(circle at 80% 0%, rgba(168, 139, 255, 0.08), transparent 28%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 32px 28px 12px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      margin-top: 0;
+      letter-spacing: -0.01em;
+    }
+
+    p.lead {
+      margin: 0;
+      color: var(--muted);
+      max-width: 860px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1.3fr;
+      gap: 18px;
+      padding: 0 28px 24px;
+    }
+
+    .panel {
+      background: linear-gradient(145deg, rgba(93, 214, 255, 0.04), rgba(0,0,0,0)),
+                  linear-gradient(200deg, rgba(168, 139, 255, 0.04), rgba(0,0,0,0)),
+                  var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 18px 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+    }
+
+    .panel + .panel { margin-top: 12px; }
+
+    .panel h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      font-size: 1.08rem;
+    }
+
+    .panel small { color: var(--muted); }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0f1118;
+      color: var(--text);
+      transition: border 0.2s, box-shadow 0.2s;
+      font-size: 0.95rem;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(93, 214, 255, 0.25);
+    }
+
+    textarea { resize: vertical; min-height: 120px; }
+
+    .row { display: flex; gap: 8px; align-items: center; }
+    .row > * { flex: 1; }
+
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      background: #111522;
+      transition: all 0.2s;
+      font-size: 0.92rem;
+    }
+
+    .chip.active {
+      border-color: var(--accent);
+      background: rgba(93, 214, 255, 0.12);
+      box-shadow: 0 0 0 2px rgba(93, 214, 255, 0.15);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 8px 0 0;
+    }
+
+    .summary {
+      background: linear-gradient(160deg, rgba(93, 214, 255, 0.08), rgba(168, 139, 255, 0.08));
+      border: 1px solid rgba(93, 214, 255, 0.25);
+    }
+
+    .summary h2 { margin: 0 0 12px; }
+
+    .price {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .muted-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(168, 139, 255, 0.12);
+      border: 1px solid rgba(168, 139, 255, 0.25);
+      color: #dbcfff;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0c0f1a;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(93, 214, 255, 0.28);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button.secondary {
+      background: #111827;
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid var(--border);
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .process {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .step {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #0f1118;
+      min-height: 120px;
+    }
+
+    .step strong { color: var(--accent); }
+
+    .stacked { display: grid; gap: 12px; }
+
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border);
+      font-weight: 600;
+    }
+
+    .breakdown-row:last-child { border-bottom: none; }
+
+    .pill-check {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(140deg, rgba(93, 214, 255, 0.04), rgba(0,0,0,0)), #0f1118;
+    }
+
+    .pill-check input {
+      width: auto;
+      margin-top: 2px;
+      accent-color: var(--accent);
+    }
+
+    .pill-check span:first-of-type {
+      flex: 1;
+      min-width: 0;
+      line-height: 1.5;
+    }
+
+    .pill-check .pill {
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .alt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    footer {
+      padding: 16px 28px 32px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Calculateur de devis — Designer 3D freelance</h1>
+    <p class="lead">Composez un devis ultra-modulable pour vos missions 3D : modélisation, texturing, animation, rendu et livraison. Ajustez chaque paramètre (complexité, livrables, rush, licences, révisions) et obtenez un chiffrage clair étape par étape.</p>
+  </header>
+
+  <div class="grid">
+    <main class="stacked">
+      <section class="panel">
+        <h3>1) Profil du projet <small>Type, complexité, durée prévisionnelle</small></h3>
+        <div class="section-grid">
+          <div>
+            <label for="projectType">Type de projet</label>
+            <select id="projectType">
+              <option value="product">Visualisation produit</option>
+              <option value="archviz">Architecture / intérieur</option>
+              <option value="character">Personnage / créature</option>
+              <option value="environment">Environnement / props</option>
+              <option value="motion">Motion design 3D</option>
+              <option value="xr">XR / Temps réel</option>
+            </select>
+          </div>
+          <div>
+            <label for="complexity">Complexité</label>
+            <select id="complexity">
+              <option value="1">Essentiel (low poly, peu de détails)</option>
+              <option value="1.3">Standard (détails modérés)</option>
+              <option value="1.6">Avancé (assets riches)</option>
+              <option value="2">Hero asset / photoréaliste</option>
+            </select>
+          </div>
+          <div>
+            <label for="estimatedDays">Charge estimée (jours)</label>
+            <input id="estimatedDays" type="number" min="1" value="3">
+          </div>
+          <div>
+            <label for="currency">Devise</label>
+            <select id="currency">
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="MGA">MGA</option>
+            </select>
+          </div>
+        </div>
+        <p class="note">Les bases tarifaires varient par type de projet et seront modulées par la complexité et les facteurs suivants.</p>
+      </section>
+
+      <section class="panel">
+        <h3>2) Spécifications de production <small>Animation, rendus, texturing</small></h3>
+        <div class="section-grid">
+          <div>
+            <label for="renderCount">Nombre de rendus HD</label>
+            <input id="renderCount" type="number" min="0" value="3">
+          </div>
+          <div>
+            <label for="animationSeconds">Durée d'animation (sec)</label>
+            <input id="animationSeconds" type="number" min="0" value="0">
+          </div>
+          <div>
+            <label for="maps">Maps réalistes (PBR)</label>
+            <select id="maps">
+              <option value="0">Aucune</option>
+              <option value="1">Pack standard (albedo, normal, roughness)</option>
+              <option value="1.35">Pack avancé (AO, displacement, SSS)</option>
+            </select>
+          </div>
+          <div>
+            <label for="lod">Niveaux de détail (LOD)</label>
+            <select id="lod">
+              <option value="1">1 LOD</option>
+              <option value="1.15">2 LOD</option>
+              <option value="1.35">3+ LOD</option>
+            </select>
+          </div>
+        </div>
+        <div class="section-grid" style="margin-top:10px;">
+          <div>
+            <label for="revisionRounds">Tours de révisions inclus</label>
+            <input id="revisionRounds" type="number" min="0" value="2">
+          </div>
+          <div>
+            <label for="extraRevisionCost">Coût par révision supplémentaire (€)</label>
+            <input id="extraRevisionCost" type="number" min="0" value="80">
+          </div>
+          <div>
+            <label for="deliveryFormat">Format de livraison</label>
+            <select id="deliveryFormat">
+              <option value="60">Obj/FBX</option>
+              <option value="90">USDZ/GLB optimisé</option>
+              <option value="120">Scene ready (Unreal/Unity)</option>
+            </select>
+          </div>
+          <div>
+            <label for="deliverySlots">Versions / prises différentes</label>
+            <input id="deliverySlots" type="number" min="1" value="1">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>3) Services & add-ons <small>Cocher ce qui s'applique</small></h3>
+        <div class="alt-grid" id="addons"></div>
+      </section>
+
+      <section class="panel">
+        <h3>4) Usage, licence & délais <small>Influence sur le multiplicateur final</small></h3>
+        <div class="section-grid">
+          <div>
+            <label for="usage">Type d'usage / licence</label>
+            <select id="usage">
+              <option value="1">Interne / labo</option>
+              <option value="1.2">Marketing digital</option>
+              <option value="1.35">Événementiel / salon</option>
+              <option value="1.55">TV / cinéma</option>
+              <option value="1.7">Usage global multi-supports</option>
+            </select>
+          </div>
+          <div>
+            <label for="rush">Urgence (jours restants)</label>
+            <input id="rush" type="number" min="0" value="14">
+            <p class="note">Moins de 7 jours => majoration, >21 jours => remise planning.</p>
+          </div>
+          <div>
+            <label for="teamSize">Coordination équipe / pipeline</label>
+            <select id="teamSize">
+              <option value="1">Solo</option>
+              <option value="1.1">Intégration pipeline studio</option>
+              <option value="1.18">Collaboration multi-artistes</option>
+            </select>
+          </div>
+          <div>
+            <label for="support">Support et maintenance post-livraison (sem.)</label>
+            <input id="support" type="number" min="0" value="2">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>5) Notes & contexte</h3>
+        <textarea id="notes" placeholder="Ex: besoins en photoréalisme, contraintes GPU, assets fournis, langue des livrables..."></textarea>
+      </section>
+    </main>
+
+    <aside class="stacked">
+      <section class="panel summary">
+        <div class="row" style="align-items:flex-start;">
+          <div>
+            <h2>Estimation dynamique</h2>
+            <p class="note">Toutes les valeurs sont modifiables. Les résultats s'actualisent en direct.</p>
+          </div>
+          <span class="badge">Modulable</span>
+        </div>
+        <p class="price" id="price">€ 0</p>
+        <div class="breakdown" id="breakdown"></div>
+        <ul class="muted-list" id="meta"></ul>
+        <div class="btn-row">
+          <button id="copy">Copier le breakdown</button>
+          <button class="secondary" id="reset">Réinitialiser</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Processus de production</h3>
+        <div class="process">
+          <div class="step"><strong>Kickoff</strong><br>Brief, références, périmètre, planning, risques.</div>
+          <div class="step"><strong>Concept</strong><br>Moodboard, croquis, identité visuelle, validation style.</div>
+          <div class="step"><strong>Blocage / layout</strong><br>Volumes, cadrage, timing animation.</div>
+          <div class="step"><strong>Modélisation & UV</strong><br>Topologie, retopo, dépliage propre.</div>
+          <div class="step"><strong>Texturing & shading</strong><br>PBR, mats procéduraux, cohérence lumières.</div>
+          <div class="step"><strong>Rig / anima</strong><br>Squelettes, contraintes, tests de poses.</div>
+          <div class="step"><strong>Lighting / rendu</strong><br>Lookdev, passes, QA, débruitage.</div>
+          <div class="step"><strong>Livraison</strong><br>Formats, check QA, packaging, transfert sécurisé.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Checklist avant devis</h3>
+        <div class="pill-check"><input type="checkbox" checked>Contraintes techniques (GPU, moteur, version logicielle)</div>
+        <div class="pill-check"><input type="checkbox" checked>Assets fournis vs à produire</div>
+        <div class="pill-check"><input type="checkbox" checked>Références visuelles validées</div>
+        <div class="pill-check"><input type="checkbox" checked>Canal d'usage & licence clarifiés</div>
+        <div class="pill-check"><input type="checkbox" checked>Planification des validations intermédiaires</div>
+      </section>
+    </aside>
+  </div>
+
+  <footer>
+    Calculateur pensé pour freelances et studios : ajustez vos bases journalières, ajoutez vos propres add-ons et exportez le détail pour vos clients.
+  </footer>
+
+  <script>
+    const baseDayRates = {
+      product: 380,
+      archviz: 420,
+      character: 480,
+      environment: 420,
+      motion: 450,
+      xr: 430
+    };
+
+    const addonList = [
+      { key: 'concept', label: 'Pré-prod : moodboard & concept', price: 220 },
+      { key: 'story', label: 'Storyboard / animatic', price: 260 },
+      { key: 'scan', label: 'Photogrammétrie / scan cleanup', price: 240 },
+      { key: 'rig', label: 'Rig / skinning', price: 280 },
+      { key: 'sim', label: 'FX / simulation (cloth/particles)', price: 240 },
+      { key: 'renderfarm', label: 'Crédit renderfarm / compute', price: 180 },
+      { key: 'compo', label: 'Compo & grading', price: 180 },
+      { key: 'doc', label: 'Documentation technique', price: 120 },
+      { key: 'handoff', label: 'Handoff pipeline (naming, layers)', price: 140 },
+      { key: 'workshop', label: 'Workshop client (1h)', price: 110 },
+      { key: 'qa', label: 'QA / tests plateforme (XR/web)', price: 160 },
+      { key: 'licence', label: 'Librairies / plugins tiers', price: 130 }
+    ];
+
+    const addonsContainer = document.getElementById('addons');
+    addonList.forEach((addon) => {
+      const card = document.createElement('div');
+      card.className = 'pill-check';
+      card.innerHTML = `<input type="checkbox" data-addon="${addon.key}" aria-label="${addon.label}"> <span>${addon.label}</span> <span class="pill">+${addon.price} €</span>`;
+      addonsContainer.appendChild(card);
+    });
+
+    const elements = {
+      projectType: document.getElementById('projectType'),
+      complexity: document.getElementById('complexity'),
+      estimatedDays: document.getElementById('estimatedDays'),
+      currency: document.getElementById('currency'),
+      renderCount: document.getElementById('renderCount'),
+      animationSeconds: document.getElementById('animationSeconds'),
+      maps: document.getElementById('maps'),
+      lod: document.getElementById('lod'),
+      revisionRounds: document.getElementById('revisionRounds'),
+      extraRevisionCost: document.getElementById('extraRevisionCost'),
+      deliveryFormat: document.getElementById('deliveryFormat'),
+      deliverySlots: document.getElementById('deliverySlots'),
+      usage: document.getElementById('usage'),
+      rush: document.getElementById('rush'),
+      teamSize: document.getElementById('teamSize'),
+      support: document.getElementById('support'),
+      notes: document.getElementById('notes'),
+      price: document.getElementById('price'),
+      breakdown: document.getElementById('breakdown'),
+      meta: document.getElementById('meta'),
+      copy: document.getElementById('copy'),
+      reset: document.getElementById('reset')
+    };
+
+    const currencySymbols = { EUR: '€', USD: '$', MGA: 'Ar' };
+    const currencyRate = { EUR: 1, USD: 1.08, MGA: 4800 };
+
+    function clamp(val, min, max) {
+      return Math.min(Math.max(val, min), max);
+    }
+
+    function compute() {
+      const symbol = currencySymbols[elements.currency.value];
+      const fx = currencyRate[elements.currency.value];
+
+      const baseDay = baseDayRates[elements.projectType.value] * Number(elements.complexity.value);
+      const days = Math.max(1, Number(elements.estimatedDays.value || 1));
+      const baseTotal = baseDay * days;
+
+      const renderCost = Number(elements.renderCount.value || 0) * 55;
+      const animCost = Number(elements.animationSeconds.value || 0) * 9; // €/s d'anim 3D
+      const mapsFactor = Number(elements.maps.value || 1);
+      const lodFactor = Number(elements.lod.value || 1);
+      const production = (baseTotal + renderCost + animCost) * mapsFactor * lodFactor;
+
+      const revisionsIncluded = Number(elements.revisionRounds.value || 0);
+      const extraRevision = Number(elements.extraRevisionCost.value || 0);
+      const assumedExtra = clamp(revisionsIncluded - 2, 0, 8) * extraRevision;
+
+      const formatCost = Number(elements.deliveryFormat.value || 0) * Number(elements.deliverySlots.value || 1);
+      const supportWeeks = Number(elements.support.value || 0);
+      const supportCost = supportWeeks * 80;
+
+      const addonTotal = Array.from(document.querySelectorAll('[data-addon]'))
+        .filter((el) => el.checked)
+        .reduce((sum, el) => {
+          const found = addonList.find((a) => a.key === el.dataset.addon);
+          return sum + (found ? found.price : 0);
+        }, 0);
+
+      const usageFactor = Number(elements.usage.value || 1);
+      const teamFactor = Number(elements.teamSize.value || 1);
+      const rushDays = Number(elements.rush.value || 14);
+      const rushFactor = rushDays <= 7 ? 1.35 : rushDays <= 14 ? 1.18 : rushDays >= 21 ? 0.95 : 1;
+
+      const subtotal = production + assumedExtra + formatCost + supportCost + addonTotal;
+      const totalEUR = subtotal * usageFactor * teamFactor * rushFactor;
+      const converted = totalEUR * fx;
+
+      elements.price.textContent = `${symbol} ${converted.toFixed(0)}`;
+
+      const lines = [
+        { label: 'Base x jours', value: baseTotal },
+        { label: 'Rendus HD', value: renderCost },
+        { label: 'Animation', value: animCost },
+        { label: 'Maps / LOD', value: production - (baseTotal + renderCost + animCost) },
+        { label: 'Révisions anticipées', value: assumedExtra },
+        { label: 'Formats & versions', value: formatCost },
+        { label: 'Support post-prod', value: supportCost },
+        { label: 'Add-ons', value: addonTotal },
+        { label: `Multiplicateur licence (${usageFactor}x)`, value: subtotal * (usageFactor - 1) },
+        { label: `Multiplicateur équipe (${teamFactor}x)`, value: subtotal * usageFactor * (teamFactor - 1) },
+        { label: `Modulation délai (${rushFactor}x)`, value: totalEUR - subtotal * usageFactor * teamFactor }
+      ];
+
+      elements.breakdown.innerHTML = lines
+        .map(({ label, value }) => `<div class="breakdown-row"><span>${label}</span><span>${symbol} ${Math.max(0, value * fx).toFixed(0)}</span></div>`)
+        .join('');
+
+      const meta = [
+        `Jours estimés : ${days}`,
+        `Révisions incluses : ${revisionsIncluded} (extra à ${extraRevision}€)`,
+        `Formats : ${elements.deliveryFormat.options[elements.deliveryFormat.selectedIndex].text} x${elements.deliverySlots.value}`,
+        `Usage : ${elements.usage.options[elements.usage.selectedIndex].text}`,
+        `Délai : ${rushDays} jours restants`,
+        `Complexité : ${elements.complexity.options[elements.complexity.selectedIndex].text}`
+      ];
+
+      elements.meta.innerHTML = meta.map((m) => `<li>${m}</li>`).join('');
+    }
+
+    function resetForm() {
+      document.querySelectorAll('select, input[type="number"], textarea').forEach((el) => {
+        if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        if (el.type === 'number') el.value = el.defaultValue || 0;
+        if (el.tagName === 'TEXTAREA') el.value = '';
+      });
+      document.querySelectorAll('[data-addon]').forEach((el) => (el.checked = false));
+      compute();
+    }
+
+    Object.values(elements).forEach((el) => {
+      if (!el) return;
+      el.addEventListener('input', compute);
+      el.addEventListener('change', compute);
+    });
+
+    document.querySelectorAll('[data-addon]').forEach((el) => {
+      el.addEventListener('change', compute);
+    });
+
+    elements.copy.addEventListener('click', () => {
+      const symbol = currencySymbols[elements.currency.value];
+      const text = `Devis ${elements.projectType.options[elements.projectType.selectedIndex].text}\n` +
+        Array.from(elements.breakdown.children).map((row) => row.innerText).join('\n') +
+        `\nTotal: ${elements.price.textContent}\nNotes: ${elements.notes.value || '—'}`;
+      navigator.clipboard.writeText(text).then(() => {
+        elements.copy.textContent = 'Copié !';
+        setTimeout(() => (elements.copy.textContent = 'Copier le breakdown'), 1200);
+      });
+    });
+
+    elements.reset.addEventListener('click', resetForm);
+    compute();
+  </script>
+</body>
+</html>
