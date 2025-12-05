@@ -241,16 +241,28 @@
 
     .pill-check {
       display: flex;
-      gap: 8px;
-      align-items: center;
-      padding: 8px 10px;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 12px;
       cursor: pointer;
       background: #0f1118;
     }
 
-    .pill-check input { width: auto; }
+    .pill-check input { width: auto; margin-top: 2px; }
+
+    .pill-check span:not(.pill) {
+      flex: 1 1 240px;
+      min-width: 0;
+      line-height: 1.4;
+    }
+
+    .pill-check .pill {
+      margin-left: auto;
+      white-space: nowrap;
+    }
 
     .alt-grid {
       display: grid;
@@ -309,7 +321,7 @@
             <label for="currency">Devise</label>
             <select id="currency">
               <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
+              <option value="MGA">MGA</option>
             </select>
           </div>
         </div>
@@ -488,7 +500,7 @@
     addonList.forEach((addon) => {
       const card = document.createElement('div');
       card.className = 'pill-check';
-      card.innerHTML = `<input type="checkbox" data-addon="${addon.key}" aria-label="${addon.label}"> <span>${addon.label}</span> <span class="pill">+${addon.price} €</span>`;
+      card.innerHTML = `<input type="checkbox" data-addon="${addon.key}" data-price="${addon.price}" aria-label="${addon.label}"> <span>${addon.label}</span> <span class="pill">+${addon.price} €</span>`;
       addonsContainer.appendChild(card);
     });
 
@@ -517,8 +529,8 @@
       reset: document.getElementById('reset')
     };
 
-    const currencySymbols = { EUR: '€', USD: '$' };
-    const currencyRate = { EUR: 1, USD: 1.08 };
+    const currencySymbols = { EUR: '€', MGA: 'Ar' };
+    const currencyRate = { EUR: 1, MGA: 4850 };
 
     function clamp(val, min, max) {
       return Math.min(Math.max(val, min), max);
@@ -531,6 +543,12 @@
       const baseDay = baseDayRates[elements.projectType.value] * Number(elements.complexity.value);
       const days = Math.max(1, Number(elements.estimatedDays.value || 1));
       const baseTotal = baseDay * days;
+
+      document.querySelectorAll('[data-addon]').forEach((el) => {
+        const price = Number(el.dataset.price || 0);
+        const badge = el.parentElement.querySelector('.pill');
+        if (badge) badge.textContent = `+${Math.round(price * fx)} ${symbol}`;
+      });
 
       const renderCost = Number(elements.renderCount.value || 0) * 55;
       const animCost = Number(elements.animationSeconds.value || 0) * 9; // €/s d'anim 3D
@@ -548,10 +566,7 @@
 
       const addonTotal = Array.from(document.querySelectorAll('[data-addon]'))
         .filter((el) => el.checked)
-        .reduce((sum, el) => {
-          const found = addonList.find((a) => a.key === el.dataset.addon);
-          return sum + (found ? found.price : 0);
-        }, 0);
+        .reduce((sum, el) => sum + Number(el.dataset.price || 0), 0);
 
       const usageFactor = Number(elements.usage.value || 1);
       const teamFactor = Number(elements.teamSize.value || 1);
