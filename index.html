@@ -146,22 +146,6 @@
       font-size: 1.1rem;
     }
 
-    .progress {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.55);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .progress span {
-      display: block;
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
-      transition: width var(--transition);
-    }
-
     .toggle-group {
       display: inline-flex;
       background: rgba(255, 255, 255, 0.35);
@@ -221,6 +205,21 @@
     .grid > div {
       flex: 1 1 220px;
       min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .form-item {
+      flex: 1 1 240px;
+      min-width: 240px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -292,22 +291,6 @@
     .helper {
       font-size: 0.8rem;
       color: var(--muted);
-    }
-
-    .chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.5);
-      font-size: 0.8rem;
-      color: var(--muted);
-      border: none;
-      cursor: pointer;
     }
 
     .options {
@@ -527,14 +510,6 @@
       </div>
     </header>
 
-    <section class="glass panel" aria-label="Progression">
-      <div class="inline" style="justify-content: space-between;">
-        <h2>Progression</h2>
-        <span class="helper" id="progress-label">0% complété</span>
-      </div>
-      <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
-    </section>
-
     <div class="content">
       <main style="display: flex; flex-direction: column; gap: 24px;">
         <section class="glass panel" aria-label="Identité">
@@ -616,10 +591,6 @@
               <button type="button" data-step="1" data-target="pieces-large">+</button>
             </div>
           </div>
-          <div class="chips">
-            <button class="chip" type="button" data-quick="pieces-medium">+1 Medium</button>
-            <button class="chip" type="button" data-quick="pieces-large">+1 Large</button>
-          </div>
         </div>
         <div class="grid" id="volume-exterior" style="display:none;">
           <div>
@@ -673,15 +644,15 @@
             </div>
           </div>
         </div>
-        <div class="grid">
-          <div>
+        <div class="form-row">
+          <div class="form-item">
             <label class="checkbox">
               <input type="checkbox" id="toggle-m2" />
               Mesure en m² (optionnel)
             </label>
             <p class="helper">Remplace les pièces/zones par un calcul au m².</p>
           </div>
-          <div id="m2-field" style="display:none;">
+          <div class="form-item" id="m2-field" style="display:none;">
             <label for="m2-value">Surface (m²)</label>
             <input id="m2-value" type="number" min="0" value="0" />
           </div>
@@ -754,13 +725,13 @@
 
       <section class="glass panel" aria-label="Retours">
         <h2>Retours & logistique</h2>
-        <div class="grid">
-          <div>
+        <div class="form-row">
+          <div class="form-item">
             <label for="cycles">Cycles de retours demandés</label>
             <input id="cycles" type="number" min="1" value="2" />
             <span class="helper">Cycles inclus : <strong id="cycles-included">2</strong></span>
           </div>
-          <div>
+          <div class="form-item">
             <label class="checkbox"><input type="checkbox" id="opt-travel" /> Déplacement</label>
             <div class="inline" id="travel-block" style="display:none;">
               <input id="travel-km" type="number" min="0" value="0" />
@@ -772,15 +743,15 @@
 
       <section class="glass panel" aria-label="TVA">
         <h2>TVA & conversion</h2>
-        <div class="grid">
-          <div>
+        <div class="form-row">
+          <div class="form-item">
             <label class="checkbox"><input type="checkbox" id="toggle-tva" /> Ajouter TVA</label>
             <div class="inline">
               <input id="tva-rate" type="number" min="0" value="0" />
               <span class="helper">%</span>
             </div>
           </div>
-          <div>
+          <div class="form-item">
             <label for="rate">Taux EUR → MGA</label>
             <input id="rate" type="number" min="0" value="4800" />
           </div>
@@ -1003,8 +974,6 @@
       volumeExterior: document.getElementById("volume-exterior"),
       volumeScenes: document.getElementById("volume-scenes"),
       m2Field: document.getElementById("m2-field"),
-      progressBar: document.getElementById("progress-bar"),
-      progressLabel: document.getElementById("progress-label"),
       openSettings: document.getElementById("open-settings"),
       settingsOverlay: document.getElementById("settings-overlay"),
       settingsForm: document.getElementById("settings-form"),
@@ -1410,24 +1379,6 @@
         ${elements.toggleTva.checked ? `<div class="summary-item"><span>TVA (${data.tvaRate}%)</span><span>${formatCurrency(data.tvaAmount)}</span></div>` : ""}
       `;
 
-      const progress = computeProgress();
-      elements.progressBar.style.width = `${progress}%`;
-      elements.progressLabel.textContent = `${progress}% complété`;
-    }
-
-    function computeProgress() {
-      const criteria = [
-        elements.clientName.value.trim().length > 0,
-        Number(elements.nbVisuels.value) > 0,
-        Number(elements.piecesSmall.value) + Number(elements.piecesMedium.value) + Number(elements.piecesLarge.value) > 0,
-        Number(elements.zonesSmall.value) + Number(elements.zonesMedium.value) + Number(elements.zonesLarge.value) > 0,
-        Number(elements.scenesSmall.value) + Number(elements.scenesMedium.value) + Number(elements.scenesLarge.value) > 0,
-        elements.optMoodboard.checked || elements.optPlan.checked || elements.optShopping.checked || elements.optModeling.checked ||
-          elements.optFurniture.checked || elements.optLandscape.checked || elements.opt4k.checked || elements.optSources.checked ||
-          elements.optAnimation.checked
-      ];
-      const completed = criteria.filter(Boolean).length;
-      return Math.round((completed / criteria.length) * 100);
     }
 
     function updateVisibility() {
@@ -1466,13 +1417,6 @@
         });
       });
 
-      document.querySelectorAll(".chip[data-quick]").forEach(chip => {
-        chip.addEventListener("click", () => {
-          const target = document.getElementById(chip.dataset.quick);
-          target.value = Math.max(0, (Number(target.value) || 0) + 1);
-          calculateAndRender();
-        });
-      });
     }
 
     function setMode(mode) {
