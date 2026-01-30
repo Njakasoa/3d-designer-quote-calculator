@@ -390,6 +390,29 @@
       padding-left: 10px;
     }
 
+    .summary-toggle {
+      border: none;
+      background: rgba(59, 130, 246, 0.12);
+      color: #1d4ed8;
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .summary-toggle:hover {
+      background: rgba(59, 130, 246, 0.2);
+    }
+
+    .summary-details {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -808,7 +831,6 @@
             <div class="summary-item"><span>Visuels</span><span id="sum-visuels"></span></div>
             <div class="summary-item"><span>Délais</span><span id="sum-delay"></span></div>
             <div class="summary-item"><span>Cycles inclus</span><span id="sum-cycles"></span></div>
-            <div class="summary-item"><span>Total</span><span id="sum-total"></span></div>
             <div class="summary-item sub" id="sum-note">Estimation indicative — devis final après validation du brief.</div>
           </div>
           <div class="summary-list advanced-only" id="summary-advanced"></div>
@@ -986,7 +1008,6 @@
       sumVisuels: document.getElementById("sum-visuels"),
       sumDelay: document.getElementById("sum-delay"),
       sumCycles: document.getElementById("sum-cycles"),
-      sumTotal: document.getElementById("sum-total"),
       cyclesIncluded: document.getElementById("cycles-included"),
       minimumPill: document.getElementById("minimum-pill"),
       emptyWarning: document.getElementById("empty-warning"),
@@ -1377,10 +1398,16 @@
       elements.sumVisuels.textContent = data.nbVisuels;
       elements.sumDelay.textContent = data.multipliersSelected.delay;
       elements.sumCycles.textContent = CONFIG.revisions.included;
-      elements.sumTotal.textContent = formatCurrency(displayTotal);
       elements.minimumPill.style.display = data.minimumApplied ? "inline-flex" : "none";
       const isEmpty = totalPieces === 0 && data.nbVisuels === 0 && (!data.m2Enabled || data.m2Value === 0);
       elements.emptyWarning.style.display = isEmpty ? "block" : "none";
+
+      const adjustments = data.options + data.revisions + data.fees;
+      const detailItems = [
+        data.options ? `<div class="summary-item sub"><span>Options</span><span>${formatCurrency(data.options)}</span></div>` : "",
+        data.revisions ? `<div class="summary-item sub"><span>Retours</span><span>${formatCurrency(data.revisions)}</span></div>` : "",
+        data.fees ? `<div class="summary-item sub"><span>Frais</span><span>${formatCurrency(data.fees)}</span></div>` : ""
+      ].filter(Boolean);
 
       elements.summaryAdvanced.innerHTML = `
         <div class="summary-item"><span>Base</span><span>${formatCurrency(data.base)}</span></div>
@@ -1390,16 +1417,33 @@
         ${data.productionDetail.visuals ? `<div class="summary-item sub"><span>Visuels</span><span>${formatCurrency(data.productionDetail.visuals)}</span></div>` : ""}
         ${data.productionDetail.renders ? `<div class="summary-item sub"><span>Rendus</span><span>${formatCurrency(data.productionDetail.renders)}</span></div>` : ""}
         ${data.productionDetail.m2 ? `<div class="summary-item sub"><span>m²</span><span>${formatCurrency(data.productionDetail.m2)}</span></div>` : ""}
-        <div class="summary-item"><span>Multiplicateur</span><span>x${data.multiplierTotal.toFixed(2)}</span></div>
-        <div class="summary-item"><span>Sous-total</span><span>${formatCurrency(data.subTotal)}</span></div>
-        <div class="summary-item"><span>Options</span><span>${formatCurrency(data.options)}</span></div>
-        <div class="summary-item"><span>Retours</span><span>${formatCurrency(data.revisions)}</span></div>
-        <div class="summary-item"><span>Frais</span><span>${formatCurrency(data.fees)}</span></div>
-        <div class="summary-item"><span>Total brut</span><span>${formatCurrency(data.totalBrut)}</span></div>
+        <div class="summary-item"><span>Multiplicateur (complexité / urgence)</span><span>x${data.multiplierTotal.toFixed(2)}</span></div>
+        <div class="summary-item"><span>Sous-total (HT)</span><span>${formatCurrency(data.subTotal)}</span></div>
+        ${adjustments ? `<div class="summary-item"><span>Frais / options / retours</span><span>${formatCurrency(adjustments)}</span></div>` : ""}
+        ${
+          detailItems.length
+            ? `<div class="summary-item"><span></span><button type="button" class="summary-toggle" id="summary-details-toggle">Voir la décomposition</button></div>
+               <div class="summary-details" id="summary-details" hidden>${detailItems.join("")}</div>`
+            : ""
+        }
         ${data.minimumApplied ? `<div class="summary-item"><span>Minimum appliqué</span><span>${formatCurrency(CONFIG.minimum)}</span></div>` : ""}
-        <div class="summary-item"><span>Total final</span><span>${formatCurrency(data.totalFinal)}</span></div>
         ${elements.toggleTva.checked ? `<div class="summary-item"><span>TVA (${data.tvaRate}%)</span><span>${formatCurrency(data.tvaAmount)}</span></div>` : ""}
       `;
+
+      const detailsToggle = elements.summaryAdvanced.querySelector("#summary-details-toggle");
+      if (detailsToggle) {
+        const details = elements.summaryAdvanced.querySelector("#summary-details");
+        detailsToggle.addEventListener("click", () => {
+          const isHidden = details.hasAttribute("hidden");
+          if (isHidden) {
+            details.removeAttribute("hidden");
+            detailsToggle.textContent = "Masquer la décomposition";
+          } else {
+            details.setAttribute("hidden", "");
+            detailsToggle.textContent = "Voir la décomposition";
+          }
+        });
+      }
 
     }
 
