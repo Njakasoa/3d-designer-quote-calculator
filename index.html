@@ -1,647 +1,1005 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculateur de devis | Designer 3D Freelance</title>
-  <style>
-    :root {
-      --bg: #0b0c10;
-      --panel: #11131a;
-      --accent: #5dd6ff;
-      --accent-2: #a88bff;
-      --text: #e6eef8;
-      --muted: #8a94a7;
-      --border: #1c1f2b;
-      --success: #27c499;
-      --warn: #f9b572;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur Devis — Design 3D & Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette Liquid Glass */
+            --bg-gradient: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --glass-blur: blur(16px);
+            
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --accent-color: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --danger: #ef4444;
+            --success: #10b981;
 
-    * { box-sizing: border-box; }
+            --radius-card: 24px;
+            --radius-input: 12px;
+            --transition: all 0.2s ease-in-out;
+        }
 
-    body {
-      margin: 0;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(93, 214, 255, 0.08), transparent 25%),
-                  radial-gradient(circle at 80% 0%, rgba(168, 139, 255, 0.08), transparent 28%),
-                  var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
+        /* --- Global Reset & Base --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
 
-    header {
-      padding: 32px 28px 12px;
-    }
+        /* Noise Texture Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: -1;
+        }
 
-    h1 {
-      margin: 0 0 12px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
+        /* --- Utility Classes: Glassmorphism --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+        }
 
-    h2 {
-      margin-top: 0;
-      letter-spacing: -0.01em;
-    }
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: var(--radius-input);
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px var(--glass-border);
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
 
-    p.lead {
-      margin: 0;
-      color: var(--muted);
-      max-width: 860px;
-    }
+        /* --- Layout --- */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 2fr 1.3fr;
-      gap: 18px;
-      padding: 0 28px 24px;
-    }
+        /* --- Components --- */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 30px 0;
+        }
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
 
-    .panel {
-      background: linear-gradient(145deg, rgba(93, 214, 255, 0.04), rgba(0,0,0,0)),
-                  linear-gradient(200deg, rgba(168, 139, 255, 0.04), rgba(0,0,0,0)),
-                  var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px 18px 16px;
-      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
-    }
+        /* Toggles */
+        .toggle-group {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            padding: 4px;
+            border-radius: 50px;
+        }
+        .toggle-btn {
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .toggle-btn.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--accent-color);
+        }
 
-    .panel + .panel { margin-top: 12px; }
+        /* Form Sections */
+        .form-section {
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+        }
 
-    .panel h3 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0 0 12px;
-      font-size: 1.08rem;
-    }
+        /* Inputs Grid */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        input[type="number"], input[type="text"], select {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid transparent;
+            padding: 12px;
+            border-radius: var(--radius-input);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        input:focus, select:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
 
-    .panel small { color: var(--muted); }
+        /* Checkbox Custom */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: var(--radius-input);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .checkbox-wrapper:hover { background: rgba(255,255,255,0.6); }
+        .checkbox-wrapper input { transform: scale(1.2); cursor: pointer; }
 
-    .section-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
-    }
+        /* --- Sticky Sidebar --- */
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+        .summary-card {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .total-display {
+            text-align: right;
+        }
+        .total-label { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .total-amount { font-size: 2.5rem; font-weight: 700; color: var(--text-main); line-height: 1.1; }
+        .total-sub { font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; }
+        
+        .breakdown-list {
+            list-style: none;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .breakdown-item.main { font-weight: 600; color: var(--text-main); margin-top: 5px; }
+        .breakdown-item.sub { color: var(--text-muted); padding-left: 10px; font-size: 0.85rem; }
 
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
+        /* --- Settings Modal --- */
+        #settings-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none; /* hidden by default */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .settings-group h4 { grid-column: 1 / -1; margin: 10px 0 5px; font-size: 0.9rem; color: var(--accent-color); }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px; }
 
-    select, input, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #0f1118;
-      color: var(--text);
-      transition: border 0.2s, box-shadow 0.2s;
-      font-size: 0.95rem;
-    }
+        /* --- Hide/Show Elements based on Mode --- */
+        body.mode-client .advanced-only { display: none !important; }
+        body.mode-advanced .client-only { display: none !important; }
 
-    select:focus, input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(93, 214, 255, 0.25);
-    }
-
-    textarea { resize: vertical; min-height: 120px; }
-
-    .row { display: flex; gap: 8px; align-items: center; }
-    .row > * { flex: 1; }
-
-    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
-
-    .chip {
-      padding: 8px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      user-select: none;
-      background: #111522;
-      transition: all 0.2s;
-      font-size: 0.92rem;
-    }
-
-    .chip.active {
-      border-color: var(--accent);
-      background: rgba(93, 214, 255, 0.12);
-      box-shadow: 0 0 0 2px rgba(93, 214, 255, 0.15);
-    }
-
-    .note {
-      color: var(--muted);
-      font-size: 0.92rem;
-      margin: 8px 0 0;
-    }
-
-    .summary {
-      background: linear-gradient(160deg, rgba(93, 214, 255, 0.08), rgba(168, 139, 255, 0.08));
-      border: 1px solid rgba(93, 214, 255, 0.25);
-    }
-
-    .summary h2 { margin: 0 0 12px; }
-
-    .price {
-      font-size: 2rem;
-      font-weight: 800;
-      margin: 0;
-    }
-
-    .muted-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 8px 0 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: rgba(168, 139, 255, 0.12);
-      border: 1px solid rgba(168, 139, 255, 0.25);
-      color: #dbcfff;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 14px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: #0c0f1a;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      box-shadow: 0 12px 32px rgba(93, 214, 255, 0.28);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    button.secondary {
-      background: #111827;
-      color: var(--text);
-      box-shadow: none;
-      border: 1px solid var(--border);
-    }
-
-    button:hover { transform: translateY(-1px); }
-
-    .pill {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
-      font-size: 0.9rem;
-    }
-
-    .process {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
-    }
-
-    .step {
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: #0f1118;
-      min-height: 120px;
-    }
-
-    .step strong { color: var(--accent); }
-
-    .stacked { display: grid; gap: 12px; }
-
-    .breakdown-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      padding: 6px 0;
-      border-bottom: 1px dashed var(--border);
-      font-weight: 600;
-    }
-
-    .breakdown-row:last-child { border-bottom: none; }
-
-    .pill-check {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      background: #0f1118;
-    }
-
-    .pill-check input { width: auto; margin-top: 2px; }
-
-    .pill-check span:not(.pill) {
-      flex: 1 1 240px;
-      min-width: 0;
-      line-height: 1.4;
-    }
-
-    .pill-check .pill {
-      margin-left: auto;
-      white-space: nowrap;
-    }
-
-    .alt-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 8px;
-    }
-
-    footer {
-      padding: 16px 28px 32px;
-      color: var(--muted);
-      text-align: center;
-      font-size: 0.95rem;
-    }
-
-    @media (max-width: 980px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-  </style>
+        /* --- Responsive --- */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; padding-bottom: 120px; }
+            .sidebar {
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                top: auto;
+                z-index: 100;
+                margin: 0;
+                padding: 10px;
+                background: transparent;
+                pointer-events: none; /* Let clicks pass through margin areas */
+            }
+            .summary-card {
+                pointer-events: auto;
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid var(--glass-border);
+                border-radius: 24px 24px 0 0;
+                padding: 20px;
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+                /* Simplification for mobile */
+                gap: 10px;
+            }
+            .breakdown-list { display: none; } /* Hide detailed breakdown on mobile/client by default, simplified view */
+            body.mode-advanced .breakdown-list { display: flex; max-height: 150px; overflow-y: auto; }
+            .total-amount { font-size: 1.8rem; }
+        }
+    </style>
 </head>
-<body>
-  <header>
-    <h1>Calculateur de devis — Designer 3D freelance</h1>
-    <p class="lead">Composez un devis ultra-modulable pour vos missions 3D : modélisation, texturing, animation, rendu et livraison. Ajustez chaque paramètre (complexité, livrables, rush, licences, révisions) et obtenez un chiffrage clair étape par étape.</p>
-  </header>
+<body class="mode-client">
 
-  <div class="grid">
-    <main class="stacked">
-      <section class="panel">
-        <h3>1) Profil du projet <small>Type, complexité, durée prévisionnelle</small></h3>
-        <div class="section-grid">
-          <div>
-            <label for="projectType">Type de projet</label>
-            <select id="projectType">
-              <option value="product">Visualisation produit</option>
-              <option value="archviz">Architecture / intérieur</option>
-              <option value="character">Personnage / créature</option>
-              <option value="environment">Environnement / props</option>
-              <option value="motion">Motion design 3D</option>
-              <option value="xr">XR / Temps réel</option>
-            </select>
-          </div>
-          <div>
-            <label for="complexity">Complexité</label>
-            <select id="complexity">
-              <option value="1">Essentiel (low poly, peu de détails)</option>
-              <option value="1.3">Standard (détails modérés)</option>
-              <option value="1.6">Avancé (assets riches)</option>
-              <option value="2">Hero asset / photoréaliste</option>
-            </select>
-          </div>
-          <div>
-            <label for="estimatedDays">Charge estimée (jours)</label>
-            <input id="estimatedDays" type="number" min="1" value="3">
-          </div>
-          <div>
-            <label for="currency">Devise</label>
-            <select id="currency">
-              <option value="EUR">EUR</option>
-              <option value="MGA">MGA</option>
-            </select>
-          </div>
+    <div class="app-container">
+        <header>
+            <h1>Calculateur <span style="font-weight: 300; opacity: 0.7;">Devis 3D</span></h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="toggle-group">
+                    <div class="toggle-btn active" id="btn-mode-client" onclick="setMode('client')">Client</div>
+                    <div class="toggle-btn" id="btn-mode-advanced" onclick="setMode('advanced')">Avancé</div>
+                </div>
+                <button class="btn-glass advanced-only" onclick="openSettings()" title="Paramètres">⚙</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="glass-panel form-section">
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Nom du Client / Projet</label>
+                        <input type="text" id="client_name" placeholder="ex: Appartement Haussmannien">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel form-section">
+                <div class="section-title">📐 Service & Volume</div>
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Type de Service</label>
+                        <select id="service_type" onchange="updateUI()">
+                            <option value="3d_visual">Visuel 3D (Rendu seul)</option>
+                            <option value="interior">Design Intérieur</option>
+                            <option value="exterior">Design Extérieur</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="group-surface">
+                        <label>Surface (m²)</label>
+                        <input type="number" id="surface" value="0" min="0" oninput="calculate()">
+                    </div>
+                    <div class="form-group" id="group-visuals">
+                        <label>Nombre de visuels</label>
+                        <input type="number" id="nb_visuals" value="1" min="0" oninput="calculate()">
+                    </div>
+                    
+                    <div class="form-group" id="group-pack">
+                        <label>Pack Design</label>
+                        <select id="pack_design" onchange="calculate()">
+                            <option value="concept">Concept / Mood</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="premium">Premium / Exéc</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel form-section">
+                <div class="section-title">🎨 Niveau de prestation</div>
+                
+                <div class="input-grid client-only">
+                    <div class="form-group">
+                        <label>Niveau global</label>
+                        <select id="client_level" onchange="calculate()">
+                            <option value="standard">Standard (Pro)</option>
+                            <option value="premium">Premium (Haut de gamme + Urgent)</option>
+                        </select>
+                        <small style="color:var(--text-muted)">Influe sur la qualité, les délais et la priorité.</small>
+                    </div>
+                </div>
+
+                <div class="input-grid advanced-only">
+                    <div class="form-group">
+                        <label>Complexité</label>
+                        <select id="complexity" onchange="calculate()">
+                            <option value="simple">Simple</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="complex">Complexe</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="group-details">
+                        <label>Niveau de Détail (3D)</label>
+                        <select id="details_level" onchange="calculate()">
+                            <option value="concept">Conceptuel</option>
+                            <option value="realistic" selected>Réaliste</option>
+                            <option value="photoreal">Phototréaliste</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Délai</label>
+                        <select id="delay" onchange="calculate()">
+                            <option value="standard">Standard</option>
+                            <option value="express">Express</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Usage (Droits)</label>
+                        <select id="usage" onchange="calculate()">
+                            <option value="personal">Personnel / Interne</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="ads">Publicité / Broadcast</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel form-section">
+                <div class="section-title">✨ Options</div>
+                <div class="input-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="opt_moodboard" onchange="calculate()"> Moodboard</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="opt_2dplan" onchange="calculate()"> Plan 2D</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="opt_shopping" onchange="calculate()"> Shopping List</label>
+                    <label class="checkbox-wrapper advanced-only"><input type="checkbox" id="opt_modeling" onchange="calculate()"> Modé. Sur mesure</label>
+                    <label class="checkbox-wrapper advanced-only"><input type="checkbox" id="opt_furniture" onchange="calculate()"> Mobilier/Déco</label>
+                    <label class="checkbox-wrapper advanced-only"><input type="checkbox" id="opt_landscape" onchange="calculate()"> Paysage/Végét.</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="opt_4k" onchange="calculate()"> Rendu 4K</label>
+                    <label class="checkbox-wrapper advanced-only"><input type="checkbox" id="opt_sources" onchange="calculate()"> Fichiers Sources</label>
+                </div>
+                
+                <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px;">
+                    <label class="checkbox-wrapper" style="width: fit-content;"><input type="checkbox" id="opt_animation" onchange="updateUI(); calculate()"> Animation Vidéo</label>
+                    <div id="anim-settings" style="margin-top: 10px; display: none;">
+                        <label>Durée (secondes) : <span id="anim-dur-display">0</span>s</label>
+                        <input type="range" id="anim_duration" min="0" max="120" value="10" step="5" style="width: 100%" oninput="calculate()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel form-section">
+                <div class="section-title">🔄 Retours & Logistique</div>
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Cycles de retours demandés</label>
+                        <input type="number" id="cycles_asked" value="2" min="1" oninput="calculate()">
+                        <small class="client-only" style="color:var(--success)">2 cycles inclus par défaut</small>
+                    </div>
+                    <div class="form-group">
+                         <label class="checkbox-wrapper" style="margin-top: 25px;">
+                             <input type="checkbox" id="opt_travel" onchange="updateUI(); calculate()"> Déplacement
+                         </label>
+                    </div>
+                    <div class="form-group" id="group-km" style="display: none;">
+                        <label>Distance (km)</label>
+                        <input type="number" id="travel_km" value="0" min="0" oninput="calculate()">
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 20px;">
+                Note : Les retours inclus concernent des ajustements mineurs sur le brief initial validé.
+            </p>
+        </main>
+
+        <aside class="sidebar">
+            <div class="glass-panel summary-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="toggle-group" style="scale: 0.8; transform-origin: left;">
+                        <div class="toggle-btn active" id="curr-eur" onclick="setCurrency('EUR')">EUR</div>
+                        <div class="toggle-btn" id="curr-mga" onclick="setCurrency('MGA')">MGA</div>
+                    </div>
+                    <div style="font-size: 0.8rem;">
+                        <label class="checkbox-wrapper" style="padding: 4px 8px; background: none;">
+                            <input type="checkbox" id="toggle-tva" onchange="calculate()"> TVA
+                        </label>
+                    </div>
+                </div>
+
+                <div class="total-display">
+                    <div class="total-label">Estimation Totale <span id="label-tax">HT</span></div>
+                    <div class="total-amount" id="display-total">0.00 €</div>
+                    <div class="total-sub" id="display-sub-currency">approx 0 Ar</div>
+                </div>
+
+                <ul class="breakdown-list">
+                    <li class="breakdown-item main"><span>Production</span> <span id="bd-prod">0</span></li>
+                    
+                    <div class="advanced-only">
+                        <li class="breakdown-item sub"><span>Base</span> <span id="bd-base">0</span></li>
+                        <li class="breakdown-item sub"><span>Coef. Tech</span> <span id="bd-multi">x1.0</span></li>
+                    </div>
+
+                    <li class="breakdown-item main"><span>Options</span> <span id="bd-opts">0</span></li>
+                    <li class="breakdown-item main advanced-only"><span>Retours supp.</span> <span id="bd-revs">0</span></li>
+                    <li class="breakdown-item main advanced-only"><span>Frais</span> <span id="bd-fees">0</span></li>
+                    
+                    <li class="breakdown-item main" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 5px;">
+                        <span>Sous-total</span> <span id="bd-subtotal">0</span>
+                    </li>
+                    <li class="breakdown-item sub" id="row-tva" style="display:none;"><span>TVA</span> <span id="bd-tva">0</span></li>
+                </ul>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn-glass" style="flex:1" onclick="exportQuote('copy')">📋 Copier</button>
+                    <button class="btn-glass btn-primary" style="flex:1" onclick="exportQuote('txt')">⬇ TXT</button>
+                </div>
+
+                <div class="client-only" style="text-align: center; font-size: 0.75rem; opacity: 0.7;">
+                    Estimation indicative — Devis final après brief.
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="settings-modal">
+        <div class="glass-panel modal-content">
+            <div class="modal-header">
+                <h3>Paramètres & Tarifs</h3>
+                <button class="btn-glass" style="padding: 5px 10px;" onclick="closeSettings()">✕</button>
+            </div>
+            
+            <div id="settings-container">
+                </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <h4>Zone Technique</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>TVA (%)</label>
+                        <input type="number" id="setting_vat_rate" class="config-input">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Taux EUR/MGA</label>
+                        <input type="number" id="setting_eur_mga_rate" class="config-input">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn-glass" onclick="downloadConfig()">Exporter JSON</button>
+                    <label class="btn-glass" style="cursor: pointer;">
+                        Importer JSON <input type="file" id="file-import" style="display: none;" onchange="importConfig(this)">
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-glass" style="color: var(--danger)" onclick="resetConfig()">Réinitialiser défaut</button>
+                <button class="btn-glass btn-primary" onclick="saveSettings()">Sauvegarder</button>
+            </div>
         </div>
-        <p class="note">Les bases tarifaires varient par type de projet et seront modulées par la complexité et les facteurs suivants.</p>
-      </section>
+    </div>
 
-      <section class="panel">
-        <h3>2) Spécifications de production <small>Animation, rendus, texturing</small></h3>
-        <div class="section-grid">
-          <div>
-            <label for="renderCount">Nombre de rendus HD</label>
-            <input id="renderCount" type="number" min="0" value="3">
-          </div>
-          <div>
-            <label for="animationSeconds">Durée d'animation (sec)</label>
-            <input id="animationSeconds" type="number" min="0" value="0">
-          </div>
-          <div>
-            <label for="maps">Maps réalistes (PBR)</label>
-            <select id="maps">
-              <option value="0">Aucune</option>
-              <option value="1">Pack standard (albedo, normal, roughness)</option>
-              <option value="1.35">Pack avancé (AO, displacement, SSS)</option>
-            </select>
-          </div>
-          <div>
-            <label for="lod">Niveaux de détail (LOD)</label>
-            <select id="lod">
-              <option value="1">1 LOD</option>
-              <option value="1.15">2 LOD</option>
-              <option value="1.35">3+ LOD</option>
-            </select>
-          </div>
-        </div>
-        <div class="section-grid" style="margin-top:10px;">
-          <div>
-            <label for="revisionRounds">Tours de révisions inclus</label>
-            <input id="revisionRounds" type="number" min="0" value="2">
-          </div>
-          <div>
-            <label for="extraRevisionCost">Coût par révision supplémentaire (€)</label>
-            <input id="extraRevisionCost" type="number" min="0" value="80">
-          </div>
-          <div>
-            <label for="deliveryFormat">Format de livraison</label>
-            <select id="deliveryFormat">
-              <option value="60">Obj/FBX</option>
-              <option value="90">USDZ/GLB optimisé</option>
-              <option value="120">Scene ready (Unreal/Unity)</option>
-            </select>
-          </div>
-          <div>
-            <label for="deliverySlots">Versions / prises différentes</label>
-            <input id="deliverySlots" type="number" min="1" value="1">
-          </div>
-        </div>
-      </section>
+    <script>
+        /* =========================================
+           1. CONFIGURATION & STATE
+           ========================================= */
+        const CONFIG_DEFAULT = {
+            base: { visual: 150, interior: 200, exterior: 240 },
+            visual_unit: { concept: 140, realistic: 260, photoreal: 480 },
+            visual_m2_opt: 2,
+            interior_m2: { concept: 10, standard: 18, premium: 32 },
+            interior_render: 220,
+            exterior_m2: { concept: 8, standard: 16, premium: 28 },
+            exterior_render: 260,
+            
+            multipliers: {
+                complexity: { simple: 1.0, standard: 1.2, complex: 1.5 },
+                details: { concept: 1.0, realistic: 1.25, photoreal: 1.6 },
+                delay: { standard: 1.0, express: 1.2, urgent: 1.35 },
+                usage: { personal: 1.0, commercial: 1.15, ads: 1.3 }
+            },
+            
+            options: {
+                moodboard: 80, plan2d: 160, shopping: 120,
+                modeling_pct: 0.20, furniture_pct: 0.15, landscape_pct: 0.18,
+                render4k_pct: 0.10, sources_pct: 0.20,
+                anim_sec: 35
+            },
+            
+            revisions: { included: 2, rate: 0.10 },
+            travel: { flat: 25, km: 0.5 },
+            min_fee: 250,
+            
+            vat_rate: 20,
+            eur_mga_rate: 4800
+        };
 
-      <section class="panel">
-        <h3>3) Services & add-ons <small>Cocher ce qui s'applique</small></h3>
-        <div class="alt-grid" id="addons"></div>
-      </section>
+        let CONFIG = JSON.parse(JSON.stringify(CONFIG_DEFAULT));
+        
+        let state = {
+            mode: 'client', // client | advanced
+            currency: 'EUR', // EUR | MGA
+            showTva: false
+        };
 
-      <section class="panel">
-        <h3>4) Usage, licence & délais <small>Influence sur le multiplicateur final</small></h3>
-        <div class="section-grid">
-          <div>
-            <label for="usage">Type d'usage / licence</label>
-            <select id="usage">
-              <option value="1">Interne / labo</option>
-              <option value="1.2">Marketing digital</option>
-              <option value="1.35">Événementiel / salon</option>
-              <option value="1.55">TV / cinéma</option>
-              <option value="1.7">Usage global multi-supports</option>
-            </select>
-          </div>
-          <div>
-            <label for="rush">Urgence (jours restants)</label>
-            <input id="rush" type="number" min="0" value="14">
-            <p class="note">Moins de 7 jours => majoration, >21 jours => remise planning.</p>
-          </div>
-          <div>
-            <label for="teamSize">Coordination équipe / pipeline</label>
-            <select id="teamSize">
-              <option value="1">Solo</option>
-              <option value="1.1">Intégration pipeline studio</option>
-              <option value="1.18">Collaboration multi-artistes</option>
-            </select>
-          </div>
-          <div>
-            <label for="support">Support et maintenance post-livraison (sem.)</label>
-            <input id="support" type="number" min="0" value="2">
-          </div>
-        </div>
-      </section>
+        /* =========================================
+           2. STORAGE & INIT
+           ========================================= */
+        function init() {
+            // Load Config
+            const storedConfig = localStorage.getItem('tk_quote_calc_config_v1');
+            if (storedConfig) {
+                try {
+                    CONFIG = JSON.parse(storedConfig);
+                } catch(e) { console.error("Config invalide", e); }
+            }
 
-      <section class="panel">
-        <h3>5) Notes & contexte</h3>
-        <textarea id="notes" placeholder="Ex: besoins en photoréalisme, contraintes GPU, assets fournis, langue des livrables..."></textarea>
-      </section>
-    </main>
+            // Load UI State
+            const storedUI = localStorage.getItem('tk_quote_calc_ui_v1');
+            if (storedUI) {
+                const ui = JSON.parse(storedUI);
+                state.mode = ui.mode || 'client';
+                state.currency = ui.currency || 'EUR';
+                state.showTva = ui.showTva || false;
+            }
 
-    <aside class="stacked">
-      <section class="panel summary">
-        <div class="row" style="align-items:flex-start;">
-          <div>
-            <h2>Estimation dynamique</h2>
-            <p class="note">Toutes les valeurs sont modifiables. Les résultats s'actualisent en direct.</p>
-          </div>
-          <span class="badge">Modulable</span>
-        </div>
-        <p class="price" id="price">€ 0</p>
-        <div class="breakdown" id="breakdown"></div>
-        <ul class="muted-list" id="meta"></ul>
-        <div class="btn-row">
-          <button id="copy">Copier le breakdown</button>
-          <button class="secondary" id="reset">Réinitialiser</button>
-        </div>
-      </section>
+            // Apply UI
+            setMode(state.mode);
+            setCurrency(state.currency);
+            document.getElementById('toggle-tva').checked = state.showTva;
+            
+            // Build Settings Panel once
+            buildSettingsPanel();
+            
+            updateUI();
+            calculate();
+        }
 
-      <section class="panel">
-        <h3>Processus de production</h3>
-        <div class="process">
-          <div class="step"><strong>Kickoff</strong><br>Brief, références, périmètre, planning, risques.</div>
-          <div class="step"><strong>Concept</strong><br>Moodboard, croquis, identité visuelle, validation style.</div>
-          <div class="step"><strong>Blocage / layout</strong><br>Volumes, cadrage, timing animation.</div>
-          <div class="step"><strong>Modélisation & UV</strong><br>Topologie, retopo, dépliage propre.</div>
-          <div class="step"><strong>Texturing & shading</strong><br>PBR, mats procéduraux, cohérence lumières.</div>
-          <div class="step"><strong>Rig / anima</strong><br>Squelettes, contraintes, tests de poses.</div>
-          <div class="step"><strong>Lighting / rendu</strong><br>Lookdev, passes, QA, débruitage.</div>
-          <div class="step"><strong>Livraison</strong><br>Formats, check QA, packaging, transfert sécurisé.</div>
-        </div>
-      </section>
+        function saveState() {
+            localStorage.setItem('tk_quote_calc_ui_v1', JSON.stringify(state));
+        }
 
-      <section class="panel">
-        <h3>Checklist avant devis</h3>
-        <div class="pill-check"><input type="checkbox" checked>Contraintes techniques (GPU, moteur, version logicielle)</div>
-        <div class="pill-check"><input type="checkbox" checked>Assets fournis vs à produire</div>
-        <div class="pill-check"><input type="checkbox" checked>Références visuelles validées</div>
-        <div class="pill-check"><input type="checkbox" checked>Canal d'usage & licence clarifiés</div>
-        <div class="pill-check"><input type="checkbox" checked>Planification des validations intermédiaires</div>
-      </section>
-    </aside>
-  </div>
+        /* =========================================
+           3. LOGIC & CALCULATION
+           ========================================= */
+        function calculate() {
+            // Get DOM Inputs
+            const service = document.getElementById('service_type').value;
+            const surface = parseFloat(document.getElementById('surface').value) || 0;
+            const nb_visuals = parseFloat(document.getElementById('nb_visuals').value) || 0;
+            const pack = document.getElementById('pack_design').value;
+            
+            // Get Multipliers inputs
+            let complexityKey = document.getElementById('complexity').value;
+            let detailsKey = document.getElementById('details_level').value;
+            let delayKey = document.getElementById('delay').value;
+            let usageKey = document.getElementById('usage').value;
 
-  <footer>
-    Calculateur pensé pour freelances et studios : ajustez vos bases journalières, ajoutez vos propres add-ons et exportez le détail pour vos clients.
-  </footer>
+            // CLIENT MODE OVERRIDES
+            if (state.mode === 'client') {
+                const clientLvl = document.getElementById('client_level').value;
+                if (clientLvl === 'standard') {
+                    complexityKey = 'standard';
+                    detailsKey = 'realistic'; // Good middle ground
+                    delayKey = 'standard';
+                    usageKey = 'commercial';
+                } else { // Premium
+                    complexityKey = 'complex'; // Bump complexity buffer
+                    detailsKey = 'photoreal';
+                    delayKey = 'express';
+                    usageKey = 'commercial';
+                }
+            }
 
-  <script>
-    const baseDayRates = {
-      product: 380,
-      archviz: 420,
-      character: 480,
-      environment: 420,
-      motion: 450,
-      xr: 430
-    };
+            // 1. BASE
+            let base_price = 0;
+            if (service === '3d_visual') base_price = CONFIG.base.visual;
+            else if (service === 'interior') base_price = CONFIG.base.interior;
+            else if (service === 'exterior') base_price = CONFIG.base.exterior;
 
-    const addonList = [
-      { key: 'concept', label: 'Pré-prod : moodboard & concept', price: 220 },
-      { key: 'story', label: 'Storyboard / animatic', price: 260 },
-      { key: 'scan', label: 'Photogrammétrie / scan cleanup', price: 240 },
-      { key: 'rig', label: 'Rig / skinning', price: 280 },
-      { key: 'sim', label: 'FX / simulation (cloth/particles)', price: 240 },
-      { key: 'renderfarm', label: 'Crédit renderfarm / compute', price: 180 },
-      { key: 'compo', label: 'Compo & grading', price: 180 },
-      { key: 'doc', label: 'Documentation technique', price: 120 },
-      { key: 'handoff', label: 'Handoff pipeline (naming, layers)', price: 140 },
-      { key: 'workshop', label: 'Workshop client (1h)', price: 110 },
-      { key: 'qa', label: 'QA / tests plateforme (XR/web)', price: 160 },
-      { key: 'licence', label: 'Librairies / plugins tiers', price: 130 }
-    ];
+            // 2. PRODUCTION
+            let production_cost = 0;
 
-    const addonsContainer = document.getElementById('addons');
-    addonList.forEach((addon) => {
-      const card = document.createElement('div');
-      card.className = 'pill-check';
-      card.innerHTML = `<input type="checkbox" data-addon="${addon.key}" data-price="${addon.price}" aria-label="${addon.label}"> <span>${addon.label}</span> <span class="pill">+${addon.price} €</span>`;
-      addonsContainer.appendChild(card);
-    });
+            if (service === '3d_visual') {
+                const p_visu = CONFIG.visual_unit[detailsKey] || 0;
+                const p_m2 = surface > 0 ? CONFIG.visual_m2_opt : 0;
+                production_cost = (nb_visuals * p_visu) + (surface * p_m2);
+            } 
+            else if (service === 'interior') {
+                const p_m2 = CONFIG.interior_m2[pack] || 0;
+                production_cost = (surface * p_m2);
+                if (nb_visuals > 0) production_cost += (nb_visuals * CONFIG.interior_render);
+            }
+            else if (service === 'exterior') {
+                const p_m2 = CONFIG.exterior_m2[pack] || 0;
+                production_cost = (surface * p_m2);
+                if (nb_visuals > 0) production_cost += (nb_visuals * CONFIG.exterior_render);
+            }
 
-    const elements = {
-      projectType: document.getElementById('projectType'),
-      complexity: document.getElementById('complexity'),
-      estimatedDays: document.getElementById('estimatedDays'),
-      currency: document.getElementById('currency'),
-      renderCount: document.getElementById('renderCount'),
-      animationSeconds: document.getElementById('animationSeconds'),
-      maps: document.getElementById('maps'),
-      lod: document.getElementById('lod'),
-      revisionRounds: document.getElementById('revisionRounds'),
-      extraRevisionCost: document.getElementById('extraRevisionCost'),
-      deliveryFormat: document.getElementById('deliveryFormat'),
-      deliverySlots: document.getElementById('deliverySlots'),
-      usage: document.getElementById('usage'),
-      rush: document.getElementById('rush'),
-      teamSize: document.getElementById('teamSize'),
-      support: document.getElementById('support'),
-      notes: document.getElementById('notes'),
-      price: document.getElementById('price'),
-      breakdown: document.getElementById('breakdown'),
-      meta: document.getElementById('meta'),
-      copy: document.getElementById('copy'),
-      reset: document.getElementById('reset')
-    };
+            // 3. MULTIPLIERS
+            const m_comp = CONFIG.multipliers.complexity[complexityKey];
+            const m_det = (service === '3d_visual') ? 1.0 : CONFIG.multipliers.details[detailsKey]; // details already in unit price for 3d_visual
+            const m_del = CONFIG.multipliers.delay[delayKey];
+            const m_use = CONFIG.multipliers.usage[usageKey];
+            
+            const total_multiplier = m_comp * m_det * m_del * m_use;
+            let sub_total_tech = (base_price + production_cost) * total_multiplier;
 
-    const currencySymbols = { EUR: '€', MGA: 'Ar' };
-    const currencyRate = { EUR: 1, MGA: 4850 };
+            // 4. OPTIONS
+            let options_cost = 0;
+            if (document.getElementById('opt_moodboard').checked) options_cost += CONFIG.options.moodboard;
+            if (document.getElementById('opt_2dplan').checked) options_cost += CONFIG.options.plan2d;
+            if (document.getElementById('opt_shopping').checked) options_cost += CONFIG.options.shopping;
+            
+            // Percentage Options (applied on Production usually, or Subtotal)
+            if (document.getElementById('opt_modeling').checked) options_cost += production_cost * CONFIG.options.modeling_pct;
+            if (document.getElementById('opt_furniture').checked) options_cost += production_cost * CONFIG.options.furniture_pct;
+            if (document.getElementById('opt_landscape').checked) options_cost += production_cost * CONFIG.options.landscape_pct;
+            if (document.getElementById('opt_4k').checked) options_cost += production_cost * CONFIG.options.render4k_pct;
+            
+            // Animation
+            if (document.getElementById('opt_animation').checked) {
+                const secs = parseFloat(document.getElementById('anim_duration').value) || 0;
+                options_cost += secs * CONFIG.options.anim_sec;
+                document.getElementById('anim-dur-display').textContent = secs;
+            }
 
-    function clamp(val, min, max) {
-      return Math.min(Math.max(val, min), max);
-    }
+            // Sources (applied on subtotal usually as it's IP buyout)
+            if (document.getElementById('opt_sources').checked) options_cost += sub_total_tech * CONFIG.options.sources_pct;
 
-    function compute() {
-      const symbol = currencySymbols[elements.currency.value];
-      const fx = currencyRate[elements.currency.value];
+            // 5. RETOURS
+            const cycles_asked = parseFloat(document.getElementById('cycles_asked').value) || 1;
+            const cycles_extra = Math.max(0, cycles_asked - CONFIG.revisions.included);
+            const revisions_cost = cycles_extra * (base_price + production_cost) * CONFIG.revisions.rate;
 
-      const baseDay = baseDayRates[elements.projectType.value] * Number(elements.complexity.value);
-      const days = Math.max(1, Number(elements.estimatedDays.value || 1));
-      const baseTotal = baseDay * days;
+            // 6. FRAIS
+            let fees_cost = 0;
+            if (document.getElementById('opt_travel').checked) {
+                const km = parseFloat(document.getElementById('travel_km').value) || 0;
+                fees_cost = CONFIG.travel.flat + (km * CONFIG.travel.km);
+            }
 
-      document.querySelectorAll('[data-addon]').forEach((el) => {
-        const price = Number(el.dataset.price || 0);
-        const badge = el.parentElement.querySelector('.pill');
-        if (badge) badge.textContent = `+${Math.round(price * fx)} ${symbol}`;
-      });
+            // 7. TOTAL & MINIMUM
+            let total_pre_min = sub_total_tech + options_cost + revisions_cost + fees_cost;
+            let total_final_ht = Math.max(CONFIG.min_fee, total_pre_min);
 
-      const renderCost = Number(elements.renderCount.value || 0) * 55;
-      const animCost = Number(elements.animationSeconds.value || 0) * 9; // €/s d'anim 3D
-      const mapsFactor = Number(elements.maps.value || 1);
-      const lodFactor = Number(elements.lod.value || 1);
-      const production = (baseTotal + renderCost + animCost) * mapsFactor * lodFactor;
+            // TVA
+            state.showTva = document.getElementById('toggle-tva').checked;
+            saveState();
+            
+            let tva_amt = 0;
+            if (state.showTva) {
+                tva_amt = total_final_ht * (CONFIG.vat_rate / 100);
+            }
+            let total_ttc = total_final_ht + tva_amt;
 
-      const revisionsIncluded = Number(elements.revisionRounds.value || 0);
-      const extraRevision = Number(elements.extraRevisionCost.value || 0);
-      const assumedExtra = clamp(revisionsIncluded - 2, 0, 8) * extraRevision;
+            // RENDER DATA
+            renderResults({
+                production: production_cost,
+                base: base_price,
+                multiplier: total_multiplier,
+                options: options_cost,
+                revisions: revisions_cost,
+                fees: fees_cost,
+                subtotal: sub_total_tech, // raw tech subtotal
+                total_ht: total_final_ht,
+                tva: tva_amt,
+                total_ttc: total_ttc
+            });
+        }
 
-      const formatCost = Number(elements.deliveryFormat.value || 0) * Number(elements.deliverySlots.value || 1);
-      const supportWeeks = Number(elements.support.value || 0);
-      const supportCost = supportWeeks * 80;
+        function renderResults(data) {
+            const isMGA = state.currency === 'MGA';
+            const rate = CONFIG.eur_mga_rate;
 
-      const addonTotal = Array.from(document.querySelectorAll('[data-addon]'))
-        .filter((el) => el.checked)
-        .reduce((sum, el) => sum + Number(el.dataset.price || 0), 0);
+            const fmt = (val, currency) => {
+                if (currency === 'MGA') {
+                    // MGA: No decimals, round to 100 Ar usually but just round here
+                    return Math.round(val * rate).toLocaleString('fr-FR') + ' Ar';
+                }
+                return val.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+            };
 
-      const usageFactor = Number(elements.usage.value || 1);
-      const teamFactor = Number(elements.teamSize.value || 1);
-      const rushDays = Number(elements.rush.value || 14);
-      const rushFactor = rushDays <= 7 ? 1.35 : rushDays <= 14 ? 1.18 : rushDays >= 21 ? 0.95 : 1;
+            const displayVal = state.showTva ? data.total_ttc : data.total_ht;
 
-      const subtotal = production + assumedExtra + formatCost + supportCost + addonTotal;
-      const totalEUR = subtotal * usageFactor * teamFactor * rushFactor;
-      const converted = totalEUR * fx;
+            // Main Display
+            document.getElementById('display-total').textContent = fmt(displayVal, state.currency);
+            document.getElementById('label-tax').textContent = state.showTva ? 'TTC' : 'HT';
+            
+            // Sub Display (Alternative Currency)
+            const altCurr = isMGA ? 'EUR' : 'MGA';
+            const altVal = fmt(displayVal, altCurr);
+            document.getElementById('display-sub-currency').textContent = `approx ${altVal}`;
 
-      elements.price.textContent = `${symbol} ${converted.toFixed(0)}`;
+            // Breakdown
+            document.getElementById('bd-prod').textContent = fmt(data.production, state.currency);
+            document.getElementById('bd-base').textContent = fmt(data.base, state.currency);
+            document.getElementById('bd-multi').textContent = 'x' + data.multiplier.toFixed(2);
+            document.getElementById('bd-opts').textContent = fmt(data.options, state.currency);
+            document.getElementById('bd-revs').textContent = fmt(data.revisions, state.currency);
+            document.getElementById('bd-fees').textContent = fmt(data.fees, state.currency);
+            document.getElementById('bd-subtotal').textContent = fmt(data.total_ht, state.currency);
+            
+            // TVA Row
+            const rowTva = document.getElementById('row-tva');
+            if (state.showTva) {
+                rowTva.style.display = 'flex';
+                document.getElementById('bd-tva').textContent = fmt(data.tva, state.currency);
+            } else {
+                rowTva.style.display = 'none';
+            }
+        }
 
-      const lines = [
-        { label: 'Base x jours', value: baseTotal },
-        { label: 'Rendus HD', value: renderCost },
-        { label: 'Animation', value: animCost },
-        { label: 'Maps / LOD', value: production - (baseTotal + renderCost + animCost) },
-        { label: 'Révisions anticipées', value: assumedExtra },
-        { label: 'Formats & versions', value: formatCost },
-        { label: 'Support post-prod', value: supportCost },
-        { label: 'Add-ons', value: addonTotal },
-        { label: `Multiplicateur licence (${usageFactor}x)`, value: subtotal * (usageFactor - 1) },
-        { label: `Multiplicateur équipe (${teamFactor}x)`, value: subtotal * usageFactor * (teamFactor - 1) },
-        { label: `Modulation délai (${rushFactor}x)`, value: totalEUR - subtotal * usageFactor * teamFactor }
-      ];
+        /* =========================================
+           4. UI HELPERS
+           ========================================= */
+        function updateUI() {
+            const service = document.getElementById('service_type').value;
+            
+            // Fields visibility based on Service
+            const sViz = service === '3d_visual';
+            const sInt = service === 'interior';
+            const sExt = service === 'exterior';
 
-      elements.breakdown.innerHTML = lines
-        .map(({ label, value }) => `<div class="breakdown-row"><span>${label}</span><span>${symbol} ${Math.max(0, value * fx).toFixed(0)}</span></div>`)
-        .join('');
+            // 3D Visual specific
+            document.getElementById('group-pack').style.display = sViz ? 'none' : 'flex';
+            document.getElementById('group-details').style.display = sViz ? 'flex' : 'none'; // detail level drives price in 3D Visu
+            
+            // Animation
+            const anim = document.getElementById('opt_animation').checked;
+            document.getElementById('anim-settings').style.display = anim ? 'block' : 'none';
 
-      const meta = [
-        `Jours estimés : ${days}`,
-        `Révisions incluses : ${revisionsIncluded} (extra à ${extraRevision}€)`,
-        `Formats : ${elements.deliveryFormat.options[elements.deliveryFormat.selectedIndex].text} x${elements.deliverySlots.value}`,
-        `Usage : ${elements.usage.options[elements.usage.selectedIndex].text}`,
-        `Délai : ${rushDays} jours restants`,
-        `Complexité : ${elements.complexity.options[elements.complexity.selectedIndex].text}`
-      ];
+            // Travel
+            const travel = document.getElementById('opt_travel').checked;
+            document.getElementById('group-km').style.display = travel ? 'flex' : 'none';
+        }
 
-      elements.meta.innerHTML = meta.map((m) => `<li>${m}</li>`).join('');
-    }
+        function setMode(m) {
+            state.mode = m;
+            document.body.className = `mode-${m}`;
+            document.getElementById('btn-mode-client').className = `toggle-btn ${m === 'client' ? 'active' : ''}`;
+            document.getElementById('btn-mode-advanced').className = `toggle-btn ${m === 'advanced' ? 'active' : ''}`;
+            saveState();
+            calculate();
+        }
 
-    function resetForm() {
-      document.querySelectorAll('select, input[type="number"], textarea').forEach((el) => {
-        if (el.tagName === 'SELECT') el.selectedIndex = 0;
-        if (el.type === 'number') el.value = el.defaultValue || 0;
-        if (el.tagName === 'TEXTAREA') el.value = '';
-      });
-      document.querySelectorAll('[data-addon]').forEach((el) => (el.checked = false));
-      compute();
-    }
+        function setCurrency(c) {
+            state.currency = c;
+            document.getElementById('curr-eur').className = `toggle-btn ${c === 'EUR' ? 'active' : ''}`;
+            document.getElementById('curr-mga').className = `toggle-btn ${c === 'MGA' ? 'active' : ''}`;
+            saveState();
+            calculate();
+        }
 
-    Object.values(elements).forEach((el) => {
-      if (!el) return;
-      el.addEventListener('input', compute);
-      el.addEventListener('change', compute);
-    });
+        /* =========================================
+           5. EXPORT
+           ========================================= */
+        function getQuoteText() {
+            const date = new Date().toLocaleDateString('fr-FR');
+            const client = document.getElementById('client_name').value || 'Client';
+            const total = document.getElementById('display-total').textContent;
+            const isClientMode = state.mode === 'client';
+            
+            let txt = `DEVIS ESTIMATIF - DESIGN 3D & ARCHI\n`;
+            txt += `Date: ${date}\n`;
+            txt += `Projet: ${client}\n`;
+            txt += `--------------------------------\n`;
+            
+            // Services
+            const sMap = { '3d_visual': 'Visuel 3D', 'interior': 'Design Intérieur', 'exterior': 'Design Extérieur' };
+            txt += `Service: ${sMap[document.getElementById('service_type').value]}\n`;
+            txt += `Surface: ${document.getElementById('surface').value} m²\n`;
+            txt += `Visuels: ${document.getElementById('nb_visuals').value}\n`;
+            
+            if (isClientMode) {
+                txt += `Niveau: ${document.getElementById('client_level').value.toUpperCase()}\n`;
+            } else {
+                txt += `Pack: ${document.getElementById('pack_design').value}\n`;
+                txt += `Complexité: ${document.getElementById('complexity').value}\n`;
+                txt += `Usage: ${document.getElementById('usage').value}\n`;
+            }
 
-    document.querySelectorAll('[data-addon]').forEach((el) => {
-      el.addEventListener('change', compute);
-    });
+            txt += `\nOPTIONS INCLUSES:\n`;
+            const checks = document.querySelectorAll('input[type="checkbox"]:checked');
+            if(checks.length === 0) txt += "- Aucune\n";
+            checks.forEach(c => {
+                if(c.id !== 'toggle-tva') txt += `- ${c.parentNode.textContent.trim()}\n`;
+            });
 
-    elements.copy.addEventListener('click', () => {
-      const symbol = currencySymbols[elements.currency.value];
-      const text = `Devis ${elements.projectType.options[elements.projectType.selectedIndex].text}\n` +
-        Array.from(elements.breakdown.children).map((row) => row.innerText).join('\n') +
-        `\nTotal: ${elements.price.textContent}\nNotes: ${elements.notes.value || '—'}`;
-      navigator.clipboard.writeText(text).then(() => {
-        elements.copy.textContent = 'Copié !';
-        setTimeout(() => (elements.copy.textContent = 'Copier le breakdown'), 1200);
-      });
-    });
+            txt += `--------------------------------\n`;
+            txt += `TOTAL ${state.showTva ? 'TTC' : 'HT'}: ${total}\n`;
+            txt += `--------------------------------\n`;
+            txt += `Note: Ce devis est une estimation indicative.\n`;
+            
+            return txt;
+        }
 
-    elements.reset.addEventListener('click', resetForm);
-    compute();
-  </script>
+        function exportQuote(type) {
+            const txt = getQuoteText();
+            if (type === 'copy') {
+                navigator.clipboard.writeText(txt).then(() => alert('Devis copié !'));
+            } else {
+                const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `devis_${new Date().toISOString().slice(0,10)}.txt`;
+                link.click();
+            }
+        }
+
+        /* =========================================
+           6. SETTINGS PANEL LOGIC
+           ========================================= */
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            populateSettingsInputs();
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function buildSettingsPanel() {
+            // Helper to create inputs mapping to CONFIG object structure is tricky recursively.
+            // Simplified approach: Manually map key sections for robustness.
+            // But to save space here, I'll rely on populateSettingsInputs to fill specific IDs
+            // and saveSettings to read them back.
+            
+            // Generating HTML for Base Prices
+            let html = `<div class="settings-group"><h4>Prix de Base (Setup)</h4><div class="settings-grid">`;
+            html += mkInput('Base Visuel 3D', 'base.visual');
+            html += mkInput('Base Intérieur', 'base.interior');
+            html += mkInput('Base Extérieur', 'base.exterior');
+            html += `</div></div>`;
+
+            html += `<div class="settings-group"><h4>Production Interior/Exterior (€/m²)</h4><div class="settings-grid">`;
+            html += mkInput('Int. Concept', 'interior_m2.concept');
+            html += mkInput('Int. Standard', 'interior_m2.standard');
+            html += mkInput('Int. Premium', 'interior_m2.premium');
+            html += mkInput('Ext. Concept', 'exterior_m2.concept');
+            html += mkInput('Ext. Standard', 'exterior_m2.standard');
+            html += mkInput('Ext. Premium', 'exterior_m2.premium');
+            html += `</div></div>`;
+
+            html += `<div class="settings-group"><h4>Options (€ forfaitaire)</h4><div class="settings-grid">`;
+            html += mkInput('Moodboard', 'options.moodboard');
+            html += mkInput('Plan 2D', 'options.plan2d');
+            html += mkInput('Shopping List', 'options.shopping');
+            html += mkInput('Animation /sec', 'options.anim_sec');
+            html += `</div></div>`;
+
+            document.getElementById('settings-container').innerHTML = html;
+        }
+
+        function mkInput(label, keyPath) {
+            return `
+            <div class="form-group">
+                <label>${label}</label>
+                <input type="number" step="0.01" data-path="${keyPath}" class="config-input">
+            </div>`;
+        }
+
+        function populateSettingsInputs() {
+            // Fill auto-generated
+            document.querySelectorAll('input[data-path]').forEach(input => {
+                const keys = input.dataset.path.split('.');
+                let val = CONFIG;
+                keys.forEach(k => val = val[k]);
+                input.value = val;
+            });
+
+            // Fill manual ones
+            document.getElementById('setting_vat_rate').value = CONFIG.vat_rate;
+            document.getElementById('setting_eur_mga_rate').value = CONFIG.eur_mga_rate;
+        }
+
+        function saveSettings() {
+            // Save auto-generated
+            document.querySelectorAll('input[data-path]').forEach(input => {
+                const keys = input.dataset.path.split('.');
+                let obj = CONFIG;
+                for(let i=0; i<keys.length-1; i++) obj = obj[keys[i]];
+                obj[keys[keys.length-1]] = parseFloat(input.value);
+            });
+
+            // Save manual
+            CONFIG.vat_rate = parseFloat(document.getElementById('setting_vat_rate').value);
+            CONFIG.eur_mga_rate = parseFloat(document.getElementById('setting_eur_mga_rate').value);
+
+            localStorage.setItem('tk_quote_calc_config_v1', JSON.stringify(CONFIG));
+            closeSettings();
+            calculate();
+            alert('Paramètres sauvegardés');
+        }
+
+        function resetConfig() {
+            if(confirm('Restaurer les valeurs par défaut ?')) {
+                CONFIG = JSON.parse(JSON.stringify(CONFIG_DEFAULT));
+                populateSettingsInputs();
+                localStorage.setItem('tk_quote_calc_config_v1', JSON.stringify(CONFIG));
+                calculate();
+            }
+        }
+
+        function downloadConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(CONFIG));
+            const link = document.createElement('a');
+            link.setAttribute("href", dataStr);
+            link.setAttribute("download", "config_devis.json");
+            link.click();
+        }
+
+        function importConfig(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const newConfig = JSON.parse(e.target.result);
+                    // Basic validation: check if base exists
+                    if(newConfig.base && newConfig.options) {
+                        CONFIG = newConfig;
+                        populateSettingsInputs();
+                        alert('Configuration chargée avec succès !');
+                    } else {
+                        throw new Error('Format invalide');
+                    }
+                } catch(err) {
+                    alert('Erreur: Fichier JSON invalide.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Start ---
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
 </body>
 </html>
