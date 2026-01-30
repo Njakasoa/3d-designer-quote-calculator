@@ -314,16 +314,30 @@
                 <div class="input-grid">
                     <div class="form-group">
                         <label>Type de Service</label>
-                        <select id="service_type" onchange="updateUI()">
+                        <select id="service_type" onchange="updateUI(); calculate()">
                             <option value="3d_visual">Visuel 3D (Rendu seul)</option>
                             <option value="interior">Design Intérieur</option>
                             <option value="exterior">Design Extérieur</option>
                         </select>
                     </div>
                     
-                    <div class="form-group" id="group-surface">
-                        <label>Surface (m²)</label>
-                        <input type="number" id="surface" value="0" min="0" oninput="calculate()">
+                    <div class="form-group" id="group-rooms">
+                        <label>Nombre de pièces (intérieur)</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+                            <input type="number" id="rooms_small" value="0" min="0" oninput="calculate()" placeholder="Small">
+                            <input type="number" id="rooms_medium" value="0" min="0" oninput="calculate()" placeholder="Medium">
+                            <input type="number" id="rooms_large" value="0" min="0" oninput="calculate()" placeholder="Large">
+                        </div>
+                        <small style="color:var(--text-muted)">Small / Medium / Large</small>
+                    </div>
+                    <div class="form-group" id="group-exterior-rooms" style="display: none;">
+                        <label>Volumes extérieurs</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+                            <input type="number" id="exterior_small" value="0" min="0" oninput="calculate()" placeholder="Small">
+                            <input type="number" id="exterior_medium" value="0" min="0" oninput="calculate()" placeholder="Medium">
+                            <input type="number" id="exterior_large" value="0" min="0" oninput="calculate()" placeholder="Large">
+                        </div>
+                        <small style="color:var(--text-muted)">Façades, terrasses, jardins, etc.</small>
                     </div>
                     <div class="form-group" id="group-visuals">
                         <label>Nombre de visuels</label>
@@ -442,8 +456,8 @@
             <div class="glass-panel summary-card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="toggle-group" style="scale: 0.8; transform-origin: left;">
-                        <div class="toggle-btn active" id="curr-eur" onclick="setCurrency('EUR')">EUR</div>
-                        <div class="toggle-btn" id="curr-mga" onclick="setCurrency('MGA')">MGA</div>
+                        <div class="toggle-btn" id="curr-eur" onclick="setCurrency('EUR')">EUR</div>
+                        <div class="toggle-btn active" id="curr-mga" onclick="setCurrency('MGA')">MGA</div>
                     </div>
                     <div style="font-size: 0.8rem;">
                         <label class="checkbox-wrapper" style="padding: 4px 8px; background: none;">
@@ -532,10 +546,18 @@
         const CONFIG_DEFAULT = {
             base: { visual: 150, interior: 200, exterior: 240 },
             visual_unit: { concept: 140, realistic: 260, photoreal: 480 },
-            visual_m2_opt: 2,
-            interior_m2: { concept: 10, standard: 18, premium: 32 },
+            visual_room: { small: 60, medium: 110, large: 180 },
+            interior_room: {
+                concept: { small: 120, medium: 200, large: 320 },
+                standard: { small: 180, medium: 280, large: 420 },
+                premium: { small: 260, medium: 380, large: 560 }
+            },
             interior_render: 220,
-            exterior_m2: { concept: 8, standard: 16, premium: 28 },
+            exterior_room: {
+                concept: { small: 140, medium: 220, large: 340 },
+                standard: { small: 200, medium: 300, large: 460 },
+                premium: { small: 280, medium: 420, large: 620 }
+            },
             exterior_render: 260,
             
             multipliers: {
@@ -564,9 +586,25 @@
         
         let state = {
             mode: 'client', // client | advanced
-            currency: 'EUR', // EUR | MGA
+            currency: 'MGA', // EUR | MGA
             showTva: false
         };
+
+        function mergeDefaults(defaults, override) {
+            if (!override || typeof override !== 'object') return JSON.parse(JSON.stringify(defaults));
+            const output = Array.isArray(defaults) ? [] : {};
+            Object.keys(defaults).forEach((key) => {
+                if (typeof defaults[key] === 'object' && defaults[key] !== null) {
+                    output[key] = mergeDefaults(defaults[key], override[key]);
+                } else {
+                    output[key] = override[key] ?? defaults[key];
+                }
+            });
+            Object.keys(override).forEach((key) => {
+                if (!(key in output)) output[key] = override[key];
+            });
+            return output;
+        }
 
         /* =========================================
            2. STORAGE & INIT
@@ -576,7 +614,7 @@
             const storedConfig = localStorage.getItem('tk_quote_calc_config_v1');
             if (storedConfig) {
                 try {
-                    CONFIG = JSON.parse(storedConfig);
+                    CONFIG = mergeDefaults(CONFIG_DEFAULT, JSON.parse(storedConfig));
                 } catch(e) { console.error("Config invalide", e); }
             }
 
@@ -585,7 +623,7 @@
             if (storedUI) {
                 const ui = JSON.parse(storedUI);
                 state.mode = ui.mode || 'client';
-                state.currency = ui.currency || 'EUR';
+                state.currency = ui.currency || 'MGA';
                 state.showTva = ui.showTva || false;
             }
 
@@ -611,9 +649,18 @@
         function calculate() {
             // Get DOM Inputs
             const service = document.getElementById('service_type').value;
-            const surface = parseFloat(document.getElementById('surface').value) || 0;
             const nb_visuals = parseFloat(document.getElementById('nb_visuals').value) || 0;
             const pack = document.getElementById('pack_design').value;
+            const roomCounts = {
+                small: parseFloat(document.getElementById('rooms_small').value) || 0,
+                medium: parseFloat(document.getElementById('rooms_medium').value) || 0,
+                large: parseFloat(document.getElementById('rooms_large').value) || 0
+            };
+            const exteriorCounts = {
+                small: parseFloat(document.getElementById('exterior_small').value) || 0,
+                medium: parseFloat(document.getElementById('exterior_medium').value) || 0,
+                large: parseFloat(document.getElementById('exterior_large').value) || 0
+            };
             
             // Get Multipliers inputs
             let complexityKey = document.getElementById('complexity').value;
@@ -645,20 +692,24 @@
 
             // 2. PRODUCTION
             let production_cost = 0;
+            const getRoomCost = (counts, pricing) => {
+                return Object.keys(counts).reduce((sum, size) => {
+                    const price = pricing?.[size] ?? 0;
+                    return sum + (counts[size] * price);
+                }, 0);
+            };
 
             if (service === '3d_visual') {
                 const p_visu = CONFIG.visual_unit[detailsKey] || 0;
-                const p_m2 = surface > 0 ? CONFIG.visual_m2_opt : 0;
-                production_cost = (nb_visuals * p_visu) + (surface * p_m2);
+                const rooms_cost = getRoomCost(roomCounts, CONFIG.visual_room);
+                production_cost = (nb_visuals * p_visu) + rooms_cost;
             } 
             else if (service === 'interior') {
-                const p_m2 = CONFIG.interior_m2[pack] || 0;
-                production_cost = (surface * p_m2);
+                production_cost = getRoomCost(roomCounts, CONFIG.interior_room?.[pack]);
                 if (nb_visuals > 0) production_cost += (nb_visuals * CONFIG.interior_render);
             }
             else if (service === 'exterior') {
-                const p_m2 = CONFIG.exterior_m2[pack] || 0;
-                production_cost = (surface * p_m2);
+                production_cost = getRoomCost(exteriorCounts, CONFIG.exterior_room?.[pack]);
                 if (nb_visuals > 0) production_cost += (nb_visuals * CONFIG.exterior_render);
             }
 
@@ -790,6 +841,10 @@
             // 3D Visual specific
             document.getElementById('group-pack').style.display = sViz ? 'none' : 'flex';
             document.getElementById('group-details').style.display = sViz ? 'flex' : 'none'; // detail level drives price in 3D Visu
+
+            // Room fields
+            document.getElementById('group-rooms').style.display = sExt ? 'none' : 'flex';
+            document.getElementById('group-exterior-rooms').style.display = sExt ? 'flex' : 'none';
             
             // Animation
             const anim = document.getElementById('opt_animation').checked;
@@ -834,8 +889,13 @@
             // Services
             const sMap = { '3d_visual': 'Visuel 3D', 'interior': 'Design Intérieur', 'exterior': 'Design Extérieur' };
             txt += `Service: ${sMap[document.getElementById('service_type').value]}\n`;
-            txt += `Surface: ${document.getElementById('surface').value} m²\n`;
             txt += `Visuels: ${document.getElementById('nb_visuals').value}\n`;
+            const service = document.getElementById('service_type').value;
+            if (service === 'exterior') {
+                txt += `Extérieur Small/Med/Large: ${document.getElementById('exterior_small').value}/${document.getElementById('exterior_medium').value}/${document.getElementById('exterior_large').value}\n`;
+            } else {
+                txt += `Pièces Small/Med/Large: ${document.getElementById('rooms_small').value}/${document.getElementById('rooms_medium').value}/${document.getElementById('rooms_large').value}\n`;
+            }
             
             if (isClientMode) {
                 txt += `Niveau: ${document.getElementById('client_level').value.toUpperCase()}\n`;
@@ -898,13 +958,34 @@
             html += mkInput('Base Extérieur', 'base.exterior');
             html += `</div></div>`;
 
-            html += `<div class="settings-group"><h4>Production Interior/Exterior (€/m²)</h4><div class="settings-grid">`;
-            html += mkInput('Int. Concept', 'interior_m2.concept');
-            html += mkInput('Int. Standard', 'interior_m2.standard');
-            html += mkInput('Int. Premium', 'interior_m2.premium');
-            html += mkInput('Ext. Concept', 'exterior_m2.concept');
-            html += mkInput('Ext. Standard', 'exterior_m2.standard');
-            html += mkInput('Ext. Premium', 'exterior_m2.premium');
+            html += `<div class="settings-group"><h4>Production Visuel 3D (par pièce)</h4><div class="settings-grid">`;
+            html += mkInput('Visuel Small', 'visual_room.small');
+            html += mkInput('Visuel Medium', 'visual_room.medium');
+            html += mkInput('Visuel Large', 'visual_room.large');
+            html += `</div></div>`;
+
+            html += `<div class="settings-group"><h4>Production Intérieur (par pièce)</h4><div class="settings-grid">`;
+            html += mkInput('Int. Concept Small', 'interior_room.concept.small');
+            html += mkInput('Int. Concept Medium', 'interior_room.concept.medium');
+            html += mkInput('Int. Concept Large', 'interior_room.concept.large');
+            html += mkInput('Int. Standard Small', 'interior_room.standard.small');
+            html += mkInput('Int. Standard Medium', 'interior_room.standard.medium');
+            html += mkInput('Int. Standard Large', 'interior_room.standard.large');
+            html += mkInput('Int. Premium Small', 'interior_room.premium.small');
+            html += mkInput('Int. Premium Medium', 'interior_room.premium.medium');
+            html += mkInput('Int. Premium Large', 'interior_room.premium.large');
+            html += `</div></div>`;
+
+            html += `<div class="settings-group"><h4>Production Extérieur (par pièce)</h4><div class="settings-grid">`;
+            html += mkInput('Ext. Concept Small', 'exterior_room.concept.small');
+            html += mkInput('Ext. Concept Medium', 'exterior_room.concept.medium');
+            html += mkInput('Ext. Concept Large', 'exterior_room.concept.large');
+            html += mkInput('Ext. Standard Small', 'exterior_room.standard.small');
+            html += mkInput('Ext. Standard Medium', 'exterior_room.standard.medium');
+            html += mkInput('Ext. Standard Large', 'exterior_room.standard.large');
+            html += mkInput('Ext. Premium Small', 'exterior_room.premium.small');
+            html += mkInput('Ext. Premium Medium', 'exterior_room.premium.medium');
+            html += mkInput('Ext. Premium Large', 'exterior_room.premium.large');
             html += `</div></div>`;
 
             html += `<div class="settings-group"><h4>Options (€ forfaitaire)</h4><div class="settings-grid">`;
