@@ -413,6 +413,124 @@
       margin-top: 4px;
     }
 
+    .deliverables {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .deliverables-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .deliverables-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .deliverables h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .deliverables-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .deliverables-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7);
+    }
+
+    .deliverables-section h4 {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .deliverables-section ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .deliverables-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .deliverables-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.12);
+      color: #1d4ed8;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .deliverables-badge--warn {
+      background: rgba(239, 68, 68, 0.12);
+      color: #b91c1c;
+    }
+
+    .deliverables-note {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .deliverables-empty {
+      margin: 0;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.45);
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .deliverables-toggle {
+      border: none;
+      background: rgba(59, 130, 246, 0.12);
+      color: #1d4ed8;
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: none;
+    }
+
+    .deliverables-toggle:hover {
+      background: rgba(59, 130, 246, 0.2);
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -535,6 +653,10 @@
       .drawer {
         display: block;
         margin-bottom: 6px;
+      }
+
+      .deliverables-toggle {
+        display: inline-flex;
       }
     }
   </style>
@@ -834,6 +956,18 @@
             <div class="summary-item sub" id="sum-note">Estimation indicative — devis final après validation du brief.</div>
           </div>
           <div class="summary-list advanced-only" id="summary-advanced"></div>
+          <div class="deliverables" id="deliverables">
+            <div class="deliverables-header">
+              <h3>Livrables inclus</h3>
+              <div class="deliverables-header-actions">
+                <div class="deliverables-badges" id="deliverables-badges"></div>
+                <button class="deliverables-toggle" id="deliverables-toggle" type="button" aria-expanded="true">
+                  Masquer les livrables
+                </button>
+              </div>
+            </div>
+            <div class="deliverables-body" id="deliverables-body"></div>
+          </div>
         </div>
       </aside>
     </div>
@@ -947,10 +1081,128 @@
       }
     };
 
+    const LIVRABLES = {
+      interior: {
+        concept: {
+          client: [
+            "Concept board d'ambiance + palette principale",
+            "Proposition d'agencement par pièce",
+            "Vue 3D d'intention par pièce"
+          ],
+          advanced: [
+            "Concept board + palette (PDF)",
+            "Implantation initiale + zoning",
+            "Vue 3D d'intention par pièce (JPG 1920px)"
+          ]
+        },
+        standard: {
+          client: [
+            "Direction artistique claire & cohérente",
+            "Proposition d'aménagement optimisée",
+            "Rendus réalistes par pièce"
+          ],
+          advanced: [
+            "DA + références (PDF)",
+            "Plans d'implantation détaillés",
+            "Rendus réalistes 2K (JPG/PNG)"
+          ]
+        },
+        premium: {
+          client: [
+            "Direction artistique complète + variantes",
+            "Rendus photoréalistes premium",
+            "Synthèse shopping détaillée"
+          ],
+          advanced: [
+            "DA complète + variantes validées",
+            "Rendus photoréalistes 4K (JPG/PNG)",
+            "Exports techniques pour artisans (PDF)"
+          ]
+        }
+      },
+      exterior: {
+        concept: {
+          client: [
+            "Concept board extérieur & palette matériaux",
+            "Proposition d'aménagement global",
+            "Vue 3D d'intention par zone"
+          ],
+          advanced: [
+            "Moodboard matériaux + palette (PDF)",
+            "Zoning extérieur + implantation",
+            "Vue 3D d'intention par zone (JPG 1920px)"
+          ]
+        },
+        standard: {
+          client: [
+            "Direction extérieure structurée",
+            "Mise en scène réaliste des volumes",
+            "Rendus réalistes par zone"
+          ],
+          advanced: [
+            "DA extérieure + références (PDF)",
+            "Implantation détaillée des volumes",
+            "Rendus réalistes 2K (JPG/PNG)"
+          ]
+        },
+        premium: {
+          client: [
+            "Direction artistique complète + variantes",
+            "Rendus photoréalistes jour / nuit",
+            "Synthèse paysagère & matériaux"
+          ],
+          advanced: [
+            "DA complète + variantes validées",
+            "Rendus photoréalistes 4K jour/nuit",
+            "Exports techniques + palette matériaux (PDF)"
+          ]
+        }
+      },
+      visual: {
+        concept: {
+          client: [
+            "Storyboard visuel d'intention",
+            "Angles de vue clés",
+            "Rendus HD prêts à partager"
+          ],
+          advanced: [
+            "Storyboard + plan de caméras",
+            "Rendus HD (JPG 1920px)",
+            "Corrections incluses sur cadrage/lumière"
+          ]
+        },
+        standard: {
+          client: [
+            "Angles de vue optimisés",
+            "Rendus réalistes haute définition",
+            "Formats web & présentation"
+          ],
+          advanced: [
+            "Plan de caméras + variantes",
+            "Rendus 2K (JPG/PNG)",
+            "Formats web/print (RGB/CMYK)"
+          ]
+        },
+        premium: {
+          client: [
+            "Mise en scène premium + variantes",
+            "Rendus photoréalistes",
+            "Formats haute définition"
+          ],
+          advanced: [
+            "Plan de caméras + focales détaillées",
+            "Rendus 4K (JPG/PNG)",
+            "Formats print + web (RGB/CMYK)"
+          ]
+        }
+      }
+    };
+
     const UI_DEFAULT = {
       mode: "client",
       currency: "MGA",
-      showTva: false
+      showTva: false,
+      deliverablesExpanded: true
     };
 
     let CONFIG = loadConfig();
@@ -999,6 +1251,10 @@
       currencyEur: document.getElementById("currency-eur"),
       summaryClient: document.getElementById("summary-client"),
       summaryAdvanced: document.getElementById("summary-advanced"),
+      deliverables: document.getElementById("deliverables"),
+      deliverablesBody: document.getElementById("deliverables-body"),
+      deliverablesToggle: document.getElementById("deliverables-toggle"),
+      deliverablesBadges: document.getElementById("deliverables-badges"),
       totalMain: document.getElementById("total-main"),
       totalAlt: document.getElementById("total-alt"),
       totalLabel: document.getElementById("total-label"),
@@ -1120,6 +1376,29 @@
         return `≈ ${eur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
       }
       return `≈ ${Math.round(valueMga).toLocaleString("fr-FR")} Ar`;
+    }
+
+    function getVisualTier(details) {
+      const map = {
+        concept: "concept",
+        realistic: "standard",
+        photoreal: "premium"
+      };
+      return map[details] || "standard";
+    }
+
+    function getResolution(packKey, is4k) {
+      if (is4k) return "4K";
+      const map = { concept: "HD", standard: "2K", premium: "4K" };
+      return map[packKey] || "2K";
+    }
+
+    function setDeliverablesExpanded(expanded) {
+      UI_STATE.deliverablesExpanded = expanded;
+      elements.deliverablesBody.hidden = !expanded;
+      elements.deliverablesToggle.textContent = expanded ? "Masquer les livrables" : "Voir les livrables";
+      elements.deliverablesToggle.setAttribute("aria-expanded", String(expanded));
+      saveUIState();
     }
 
     function getVolumes() {
@@ -1445,6 +1724,143 @@
         });
       }
 
+      renderDeliverables(data);
+    }
+
+    function renderDeliverables(data) {
+      const isClient = UI_STATE.mode === "client";
+      const modeKey = isClient ? "client" : "advanced";
+      const packKey = data.service === "visual" ? getVisualTier(data.multipliersSelected.details) : data.pack;
+      const baseItems = LIVRABLES[data.service]?.[packKey]?.[modeKey] || [];
+      const totalScenes = data.volumes.scenes.small + data.volumes.scenes.medium + data.volumes.scenes.large;
+      const totalPieces =
+        data.service === "visual"
+          ? totalScenes
+          : data.service === "interior"
+          ? data.volumes.pieces.small + data.volumes.pieces.medium + data.volumes.pieces.large
+          : data.volumes.zones.small + data.volumes.zones.medium + data.volumes.zones.large;
+      const hasQuantities = !(totalPieces === 0 && data.nbVisuels === 0 && (!data.m2Enabled || data.m2Value === 0));
+
+      if (!hasQuantities) {
+        elements.deliverablesBody.innerHTML = `<p class="deliverables-empty">Ajoute des volumes pour voir les livrables.</p>`;
+        elements.deliverablesBadges.innerHTML = "";
+        return;
+      }
+
+      const optionItems = [];
+      if (elements.optMoodboard.checked) {
+        optionItems.push(isClient ? "Moodboard inspirant" : "Moodboard détaillé (PDF)");
+      }
+      if (elements.optPlan.checked) {
+        optionItems.push(isClient ? "Plan 2D clair et lisible" : "Plan 2D (PDF + DWG)");
+      }
+      if (elements.optShopping.checked) {
+        optionItems.push(isClient ? "Liste shopping & budget indicatif" : "Shopping list détaillée (liens & références)");
+      }
+      if (elements.optModeling.checked) {
+        optionItems.push(isClient ? "Modélisation sur mesure" : "Modélisation sur mesure (assets dédiés)");
+      }
+      if (elements.optFurniture.checked) {
+        optionItems.push(isClient ? "Sélection mobilier & déco" : "Sélection mobilier/déco (références produit)");
+      }
+      if (elements.optLandscape.checked) {
+        optionItems.push(isClient ? "Paysage & végétation" : "Plan paysager & végétation (species)");
+      }
+      if (elements.optSources.checked) {
+        const sourcesText = isClient
+          ? "Fichiers sources livrés (sur demande)"
+          : "Fichiers sources (.blend/.max/.skp selon pipeline)";
+        optionItems.push(`${sourcesText}<span class="deliverables-note">Support & modifications non inclus.</span>`);
+      }
+
+      const volumeItems = [];
+      if (data.service === "visual") {
+        if (totalScenes > 0) {
+          volumeItems.push(
+            isClient
+              ? `Scènes : ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large} (total ${totalScenes})`
+              : `Scènes S/M/L : ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large} (total ${totalScenes})`
+          );
+        }
+        volumeItems.push(isClient ? "Angles de vues proposés" : "Plan de caméras + focales");
+      } else if (data.m2Enabled && data.m2Value > 0) {
+        volumeItems.push(
+          isClient
+            ? `Zoning & proposition d'aménagement sur ${data.m2Value} m²`
+            : `Zoning & plans d'aménagement sur ${data.m2Value} m² (PDF)`
+        );
+      } else if (totalPieces > 0) {
+        const label = data.service === "interior" ? "pièce" : "zone";
+        volumeItems.push(
+          isClient
+            ? `${totalPieces} ${label}${totalPieces > 1 ? "s" : ""} prises en charge`
+            : `${totalPieces} ${label}${totalPieces > 1 ? "s" : ""} (S/M/L)`
+        );
+      }
+
+      if (data.nbVisuels > 0) {
+        const resolution = getResolution(packKey, elements.opt4k.checked);
+        volumeItems.push(`Rendus : ${data.nbVisuels} image${data.nbVisuels > 1 ? "s" : ""} (${resolution})`);
+      }
+
+      if (elements.optAnimation.checked) {
+        const seconds = Number(elements.animSeconds.value) || 10;
+        const resolution = getResolution(packKey, elements.opt4k.checked);
+        volumeItems.push(
+          isClient
+            ? `Animation ${seconds}s (MP4, ${resolution})`
+            : `Animation ${seconds}s (MP4/H.264, ${resolution}, 25fps)`
+        );
+      }
+
+      const cycleText = isClient
+        ? `Retours : ${CONFIG.revisions.included} inclus, les suivants sont facturés.`
+        : `Retours : ${CONFIG.revisions.included} cycles inclus, cycles supplémentaires facturés à ${CONFIG.revisions.rate}%.`;
+      const planningItems = [cycleText];
+      if (data.multipliersSelected.delay !== "standard") {
+        const delayLabel = data.multipliersSelected.delay === "express" ? "Express" : "Urgent";
+        planningItems.push(
+          isClient
+            ? `Planning prioritaire (${delayLabel}) — validation rapide requise.`
+            : `Planning prioritaire (${delayLabel}) — jalons validés en 24/48h.`
+        );
+      }
+
+      const sections = [
+        { title: "Base du pack", items: baseItems },
+        { title: "Volumes & rendus", items: volumeItems },
+        optionItems.length ? { title: "Options activées", items: optionItems } : null,
+        { title: "Retours & planning", items: planningItems }
+      ].filter(Boolean);
+
+      const badges = [];
+      if (data.multipliersSelected.delay !== "standard") {
+        badges.push({ label: "Planning prioritaire", type: "warn" });
+      }
+      if (elements.opt4k.checked) {
+        badges.push({ label: "4K activé", type: "info" });
+      }
+      if (elements.optSources.checked) {
+        badges.push({ label: "Sources", type: "warn" });
+      }
+
+      elements.deliverablesBadges.innerHTML = badges
+        .map(
+          badge =>
+            `<span class="deliverables-badge${badge.type === "warn" ? " deliverables-badge--warn" : ""}">${badge.label}</span>`
+        )
+        .join("");
+
+      elements.deliverablesBody.innerHTML = sections
+        .map(
+          section => `
+            <div class="deliverables-section">
+              <h4>${section.title}</h4>
+              <ul>${section.items.map(item => `<li>${item}</li>`).join("")}</ul>
+            </div>
+          `
+        )
+        .join("");
     }
 
     function setGroupDisabled(container, disabled) {
@@ -1769,6 +2185,19 @@
       setMode(UI_STATE.mode);
       setCurrency(UI_STATE.currency);
       elements.toggleTva.checked = UI_STATE.showTva;
+      const hasStoredUi = Boolean(localStorage.getItem("tk_quote_calc_ui_v1"));
+      const deliverablesMedia = window.matchMedia("(max-width: 980px)");
+      if (!hasStoredUi && deliverablesMedia.matches) {
+        UI_STATE.deliverablesExpanded = false;
+      }
+      setDeliverablesExpanded(UI_STATE.deliverablesExpanded);
+      deliverablesMedia.addEventListener("change", event => {
+        if (!event.matches) {
+          setDeliverablesExpanded(true);
+        } else if (!hasStoredUi) {
+          setDeliverablesExpanded(false);
+        }
+      });
       applyUIState();
       bindSteppers();
 
@@ -1800,6 +2229,9 @@
       });
       elements.copyQuote.addEventListener("click", copyQuote);
       elements.downloadQuote.addEventListener("click", downloadQuote);
+      elements.deliverablesToggle.addEventListener("click", () =>
+        setDeliverablesExpanded(!UI_STATE.deliverablesExpanded)
+      );
 
       calculateAndRender();
     }
