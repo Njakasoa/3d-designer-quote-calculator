@@ -748,7 +748,7 @@
           </div>
           <div class="form-item">
             <label class="checkbox"><input type="checkbox" id="opt-travel" /> Déplacement</label>
-            <div class="inline" id="travel-block" style="display:none;">
+            <div class="inline" id="travel-block">
               <input id="travel-km" type="number" min="0" value="0" />
               <span class="helper">km</span>
             </div>
@@ -1420,7 +1420,7 @@
       elements.pack.disabled = service === "visual";
       elements.pack.style.opacity = service === "visual" ? 0.5 : 1;
       elements.animBlock.style.display = elements.optAnimation.checked ? "flex" : "none";
-      elements.travelBlock.style.display = elements.optTravel.checked ? "flex" : "none";
+      setGroupDisabled(elements.travelBlock, !elements.optTravel.checked);
       elements.toggleM2.disabled = service === "visual";
       elements.toggleM2.closest(".form-item").classList.toggle("is-disabled", service === "visual");
       if (service === "visual") elements.toggleM2.checked = false;
