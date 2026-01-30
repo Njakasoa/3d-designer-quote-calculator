@@ -390,6 +390,13 @@
       padding-left: 10px;
     }
 
+    .summary-item.total {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      font-weight: 800;
+    }
+
     .summary-toggle {
       border: none;
       background: rgba(59, 130, 246, 0.12);
@@ -670,8 +677,8 @@
       </div>
       <div class="inline">
         <div class="toggle-group" role="tablist" aria-label="Mode">
-          <button class="toggle-btn active" id="mode-client">Client</button>
-          <button class="toggle-btn" id="mode-advanced">Avancé</button>
+          <button class="toggle-btn active" id="mode-client" role="tab" aria-selected="true">Client</button>
+          <button class="toggle-btn" id="mode-advanced" role="tab" aria-selected="false">Avancé</button>
         </div>
         <button class="btn advanced-only" id="open-settings" type="button">⚙ Paramètres</button>
       </div>
@@ -940,8 +947,8 @@
           <div class="sidebar-currency">
             <label for="currency">Devise d'affichage</label>
             <div class="toggle-group" role="tablist" aria-label="Devise">
-              <button class="toggle-btn active" id="currency-mga">MGA</button>
-              <button class="toggle-btn" id="currency-eur">EUR</button>
+              <button class="toggle-btn active" id="currency-mga" role="tab" aria-selected="true">MGA</button>
+              <button class="toggle-btn" id="currency-eur" role="tab" aria-selected="false">EUR</button>
             </div>
           </div>
           <div class="alert" id="empty-warning">Ajoute au moins 1 pièce, 1 scène ou 1 visuel.</div>
@@ -1340,6 +1347,30 @@
       setTimeout(() => alert.remove(), 3200);
     }
 
+    const packLabelMap = {
+      concept: "Concept",
+      standard: "Standard",
+      premium: "Premium"
+    };
+
+    const serviceLabelMap = {
+      visual: "Visuels 3D",
+      interior: "Design intérieur",
+      exterior: "Design extérieur"
+    };
+
+    function clamp(n, min, max) {
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function debounce(fn, wait = 60) {
+      let timeoutId;
+      return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), wait);
+      };
+    }
+
     function applyTieredPricing(qty, tiers) {
       let remaining = qty;
       let total = 0;
@@ -1597,6 +1628,8 @@
         CONFIG.multipliers.usage[multipliersSelected.usage];
 
       const subTotal = (base + production) * multiplierTotal;
+      const animSeconds = clamp(Number(elements.animSeconds.value) || 0, 0, 120);
+      elements.animSeconds.value = animSeconds;
 
       let options = 0;
       if (elements.optMoodboard.checked) options += CONFIG.options.moodboard;
@@ -1608,8 +1641,7 @@
       if (elements.opt4k.checked) options += production * CONFIG.options.render4k_pct;
       if (elements.optSources.checked) options += subTotal * CONFIG.options.sources_pct;
       if (elements.optAnimation.checked) {
-        const seconds = Math.min(120, Math.max(0, Number(elements.animSeconds.value) || 0));
-        options += seconds * CONFIG.options.animation_sec;
+        options += animSeconds * CONFIG.options.animation_sec;
       }
 
       const cyclesAsked = Math.max(1, Number(elements.cycles.value) || 1);
@@ -1662,14 +1694,9 @@
       elements.totalAlt.textContent = formatAltCurrency(grandTotal);
       elements.totalLabel.textContent = showTva ? "Total TTC" : "Total HT";
 
-      const serviceLabel = {
-        visual: "Visuels 3D",
-        interior: "Design intérieur",
-        exterior: "Design extérieur"
-      };
-
-      elements.sumService.textContent = serviceLabel[data.service];
-      elements.sumPack.textContent = data.service === "visual" ? "—" : data.pack;
+      elements.sumService.textContent = serviceLabelMap[data.service] || data.service;
+      elements.sumPack.textContent =
+        data.service === "visual" ? "—" : packLabelMap[data.pack] || data.pack;
       const totalPieces =
         data.service === "visual"
           ? data.volumes.scenes.small + data.volumes.scenes.medium + data.volumes.scenes.large
@@ -1721,7 +1748,7 @@
         showTva
           ? `<div class="summary-item"><span>TVA (${data.tvaRate}%)</span><span>${formatCurrency(data.tvaAmount)}</span></div>`
           : "",
-        `<div class="summary-item"><span>Total ${showTva ? "TTC" : "HT"}</span><span>${formatCurrency(grandTotal)}</span></div>`
+        `<div class="summary-item total"><span>Total ${showTva ? "TTC" : "HT"}</span><span>${formatCurrency(grandTotal)}</span></div>`
       ].filter(Boolean);
 
       elements.summaryAdvanced.innerHTML = lines.join("");
@@ -1806,7 +1833,7 @@
       }
 
       if (elements.optAnimation.checked) {
-        const seconds = Number(elements.animSeconds.value) || 10;
+        const seconds = clamp(Number(elements.animSeconds.value) || 0, 0, 120);
         const resolution = getResolution(packKey, elements.opt4k.checked);
         volumeItems.push(
           isClient
@@ -1918,6 +1945,8 @@
       document.body.className = `mode-${mode}`;
       elements.modeClient.classList.toggle("active", mode === "client");
       elements.modeAdvanced.classList.toggle("active", mode === "advanced");
+      elements.modeClient.setAttribute("aria-selected", mode === "client" ? "true" : "false");
+      elements.modeAdvanced.setAttribute("aria-selected", mode === "advanced" ? "true" : "false");
       calculateAndRender();
     }
 
@@ -1925,6 +1954,8 @@
       UI_STATE.currency = currency;
       elements.currencyMga.classList.toggle("active", currency === "MGA");
       elements.currencyEur.classList.toggle("active", currency === "EUR");
+      elements.currencyMga.setAttribute("aria-selected", currency === "MGA" ? "true" : "false");
+      elements.currencyEur.setAttribute("aria-selected", currency === "EUR" ? "true" : "false");
       calculateAndRender();
     }
 
@@ -2137,8 +2168,8 @@
       let text = `DEVIS ESTIMATIF - DESIGN 3D\n`;
       text += `Date: ${date}\n`;
       text += `Projet: ${client}\n`;
-      text += `Service: ${data.service}\n`;
-      text += `Pack: ${data.service === "visual" ? "-" : data.pack}\n`;
+      text += `Service: ${serviceLabelMap[data.service] || data.service}\n`;
+      text += `Pack: ${data.service === "visual" ? "-" : packLabelMap[data.pack] || data.pack}\n`;
       text += `Visuels: ${data.nbVisuels}\n`;
       if (data.service === "visual") {
         text += `Scènes S/M/L: ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large}\n`;
@@ -2203,14 +2234,18 @@
       applyUIState();
       bindSteppers();
 
+      const debouncedCalculateAndRender = debounce(() => {
+        calculateAndRender();
+      }, 70);
+
       document.querySelectorAll("input, select").forEach(input => {
         input.addEventListener("input", () => {
           UI_STATE.showTva = elements.toggleTva.checked;
-          calculateAndRender();
+          debouncedCalculateAndRender();
         });
         input.addEventListener("change", () => {
           UI_STATE.showTva = elements.toggleTva.checked;
-          calculateAndRender();
+          debouncedCalculateAndRender();
         });
       });
 
