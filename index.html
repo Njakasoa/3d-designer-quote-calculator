@@ -69,13 +69,18 @@
     .app {
       max-width: 1280px;
       margin: 0 auto;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 24px;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    }
+
+    .content {
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
     }
 
     header {
-      grid-column: 1 / -1;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -83,7 +88,7 @@
       padding: 12px 18px;
       border-radius: var(--radius-xl);
       background: rgba(255, 255, 255, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      border: none;
       box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
       backdrop-filter: blur(14px);
     }
@@ -100,7 +105,7 @@
 
     .glass {
       background: var(--glass);
-      border: 1px solid var(--border);
+      border: none;
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
       backdrop-filter: blur(22px) saturate(160%);
@@ -114,7 +119,7 @@
       position: absolute;
       inset: 1px;
       border-radius: inherit;
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      border: none;
       pointer-events: none;
       box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6),
         inset 0 -10px 20px rgba(255, 255, 255, 0.15);
@@ -131,7 +136,8 @@
 
     .panel {
       padding: 24px;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 18px;
     }
 
@@ -159,7 +165,7 @@
     .toggle-group {
       display: inline-flex;
       background: rgba(255, 255, 255, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.45);
+      border: none;
       border-radius: 999px;
       padding: 4px;
       gap: 4px;
@@ -191,7 +197,7 @@
       cursor: pointer;
       transition: var(--transition);
       background: rgba(255, 255, 255, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      border: none;
       box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
     }
 
@@ -206,9 +212,14 @@
     }
 
     .grid {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .grid > div {
+      flex: 1 1 220px;
+      min-width: 220px;
     }
 
     label {
@@ -221,7 +232,7 @@
     select,
     textarea {
       width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      border: none;
       border-radius: var(--radius-md);
       padding: 12px;
       font-size: 1rem;
@@ -235,7 +246,7 @@
     select:focus,
     textarea:focus {
       outline: none;
-      border-color: var(--accent);
+      border-color: transparent;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
       background: rgba(255, 255, 255, 0.92);
     }
@@ -255,7 +266,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: var(--transition);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      border: none;
     }
 
     .stepper button:hover {
@@ -280,14 +291,19 @@
       background: rgba(255, 255, 255, 0.5);
       font-size: 0.8rem;
       color: var(--muted);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      border: none;
       cursor: pointer;
     }
 
     .options {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .options > label {
+      flex: 1 1 180px;
+      min-width: 180px;
     }
 
     .checkbox {
@@ -297,7 +313,7 @@
       padding: 10px 12px;
       border-radius: var(--radius-md);
       background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.55);
+      border: none;
       cursor: pointer;
       transition: var(--transition);
     }
@@ -310,16 +326,19 @@
       position: sticky;
       top: 24px;
       height: fit-content;
+      flex: 0 0 360px;
     }
 
     .summary {
       padding: 24px;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
     }
 
     .total {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
       text-align: right;
     }
@@ -329,7 +348,8 @@
     }
 
     .summary-list {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
       font-size: 0.9rem;
     }
@@ -394,14 +414,19 @@
     }
 
     .settings-grid {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .settings-grid > div {
+      flex: 1 1 220px;
+      min-width: 220px;
     }
 
     .section-divider {
       margin-top: 8px;
-      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      border-top: none;
       padding-top: 16px;
     }
 
@@ -428,8 +453,8 @@
     body.mode-advanced .advanced-only { display: block; }
 
     @media (max-width: 980px) {
-      .app {
-        grid-template-columns: 1fr;
+      .content {
+        flex-direction: column;
         padding-bottom: 160px;
       }
 
@@ -479,24 +504,25 @@
       <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
     </section>
 
-    <main style="display: grid; gap: 24px;">
-      <section class="glass panel" aria-label="Identité">
-        <h2>Projet</h2>
-        <div class="grid">
-          <div>
-            <label for="client-name">Nom client / Projet</label>
-            <input id="client-name" type="text" placeholder="Villa Oceanis" autocomplete="off" />
-          </div>
-          <div>
-            <label for="currency">Devise d'affichage</label>
-            <div class="toggle-group" role="tablist" aria-label="Devise">
-              <button class="toggle-btn active" id="currency-mga">MGA</button>
-              <button class="toggle-btn" id="currency-eur">EUR</button>
+    <div class="content">
+      <main style="display: flex; flex-direction: column; gap: 24px;">
+        <section class="glass panel" aria-label="Identité">
+          <h2>Projet</h2>
+          <div class="grid">
+            <div>
+              <label for="client-name">Nom client / Projet</label>
+              <input id="client-name" type="text" placeholder="Villa Oceanis" autocomplete="off" />
             </div>
-            <p class="helper">Interne en MGA. Conversion affichée automatiquement.</p>
+            <div>
+              <label for="currency">Devise d'affichage</label>
+              <div class="toggle-group" role="tablist" aria-label="Devise">
+                <button class="toggle-btn active" id="currency-mga">MGA</button>
+                <button class="toggle-btn" id="currency-eur">EUR</button>
+              </div>
+              <p class="helper">Interne en MGA. Conversion affichée automatiquement.</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       <section class="glass panel" aria-label="Service">
         <h2>Service & volume</h2>
@@ -737,33 +763,34 @@
           <button class="btn" id="download-quote" type="button">Télécharger .txt</button>
         </div>
       </section>
-    </main>
+      </main>
 
-    <aside class="sidebar">
-      <div class="glass summary">
-        <div class="drawer">
-          <span class="tag">Récapitulatif</span>
+      <aside class="sidebar">
+        <div class="glass summary">
+          <div class="drawer">
+            <span class="tag">Récapitulatif</span>
+          </div>
+          <div class="total">
+            <span class="subtle" id="total-label">Total HT</span>
+            <strong id="total-main">0 Ar</strong>
+            <span class="helper" id="total-alt">≈ 0 €</span>
+          </div>
+          <div class="alert" id="empty-warning">Ajoute au moins 1 pièce, 1 scène ou 1 visuel.</div>
+          <div class="pill" id="minimum-pill" style="display:none;">Minimum appliqué</div>
+          <div class="summary-list client-only" id="summary-client">
+            <div class="summary-item"><span>Service</span><span id="sum-service"></span></div>
+            <div class="summary-item"><span>Pack</span><span id="sum-pack"></span></div>
+            <div class="summary-item"><span>Pièces/scènes</span><span id="sum-volumes"></span></div>
+            <div class="summary-item"><span>Visuels</span><span id="sum-visuels"></span></div>
+            <div class="summary-item"><span>Délais</span><span id="sum-delay"></span></div>
+            <div class="summary-item"><span>Cycles inclus</span><span id="sum-cycles"></span></div>
+            <div class="summary-item"><span>Total</span><span id="sum-total"></span></div>
+            <div class="summary-item sub" id="sum-note">Estimation indicative — devis final après validation du brief.</div>
+          </div>
+          <div class="summary-list advanced-only" id="summary-advanced"></div>
         </div>
-        <div class="total">
-          <span class="subtle" id="total-label">Total HT</span>
-          <strong id="total-main">0 Ar</strong>
-          <span class="helper" id="total-alt">≈ 0 €</span>
-        </div>
-        <div class="alert" id="empty-warning">Ajoute au moins 1 pièce, 1 scène ou 1 visuel.</div>
-        <div class="pill" id="minimum-pill" style="display:none;">Minimum appliqué</div>
-        <div class="summary-list client-only" id="summary-client">
-          <div class="summary-item"><span>Service</span><span id="sum-service"></span></div>
-          <div class="summary-item"><span>Pack</span><span id="sum-pack"></span></div>
-          <div class="summary-item"><span>Pièces/scènes</span><span id="sum-volumes"></span></div>
-          <div class="summary-item"><span>Visuels</span><span id="sum-visuels"></span></div>
-          <div class="summary-item"><span>Délais</span><span id="sum-delay"></span></div>
-          <div class="summary-item"><span>Cycles inclus</span><span id="sum-cycles"></span></div>
-          <div class="summary-item"><span>Total</span><span id="sum-total"></span></div>
-          <div class="summary-item sub" id="sum-note">Estimation indicative — devis final après validation du brief.</div>
-        </div>
-        <div class="summary-list advanced-only" id="summary-advanced"></div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   </div>
 
   <div class="settings-overlay" id="settings-overlay" aria-modal="true" role="dialog">
@@ -1375,9 +1402,9 @@
     function updateVisibility() {
       const service = elements.service.value;
       const m2Active = elements.toggleM2.checked && service !== "visual";
-      elements.volumeInterior.style.display = service === "interior" && !m2Active ? "grid" : "none";
-      elements.volumeExterior.style.display = service === "exterior" && !m2Active ? "grid" : "none";
-      elements.volumeScenes.style.display = service === "visual" ? "grid" : "none";
+      elements.volumeInterior.style.display = service === "interior" && !m2Active ? "flex" : "none";
+      elements.volumeExterior.style.display = service === "exterior" && !m2Active ? "flex" : "none";
+      elements.volumeScenes.style.display = service === "visual" ? "flex" : "none";
       elements.pack.disabled = service === "visual";
       elements.pack.style.opacity = service === "visual" ? 0.5 : 1;
       elements.animBlock.style.display = elements.optAnimation.checked ? "flex" : "none";
