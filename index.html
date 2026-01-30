@@ -225,6 +225,20 @@
       gap: 8px;
     }
 
+    .is-disabled {
+      opacity: 0.45;
+      filter: grayscale(0.4);
+      position: relative;
+      pointer-events: none;
+    }
+
+    .is-disabled input,
+    .is-disabled select,
+    .is-disabled button {
+      background: rgba(255, 255, 255, 0.35);
+      box-shadow: none;
+    }
+
     label {
       font-size: 0.85rem;
       color: var(--muted);
@@ -592,7 +606,7 @@
             </div>
           </div>
         </div>
-        <div class="grid" id="volume-exterior" style="display:none;">
+        <div class="grid" id="volume-exterior">
           <div>
             <label>Zones Small</label>
             <div class="stepper">
@@ -618,7 +632,7 @@
             </div>
           </div>
         </div>
-        <div class="grid" id="volume-scenes" style="display:none;">
+        <div class="grid" id="volume-scenes">
           <div>
             <label>Scènes Small</label>
             <div class="stepper">
@@ -652,7 +666,7 @@
             </label>
             <p class="helper">Remplace les pièces/zones par un calcul au m².</p>
           </div>
-          <div class="form-item" id="m2-field" style="display:none;">
+          <div class="form-item" id="m2-field">
             <label for="m2-value">Surface (m²)</label>
             <input id="m2-value" type="number" min="0" value="0" />
           </div>
@@ -1383,20 +1397,30 @@
 
     }
 
+    function setGroupDisabled(container, disabled) {
+      container.classList.toggle("is-disabled", disabled);
+      container.setAttribute("aria-disabled", disabled ? "true" : "false");
+      container.querySelectorAll("input, select, textarea, button").forEach(control => {
+        control.disabled = disabled;
+      });
+    }
+
     function updateVisibility() {
       const service = elements.service.value;
       const m2Active = elements.toggleM2.checked && service !== "visual";
-      elements.volumeInterior.style.display = service === "interior" && !m2Active ? "flex" : "none";
-      elements.volumeExterior.style.display = service === "exterior" && !m2Active ? "flex" : "none";
-      elements.volumeScenes.style.display = service === "visual" ? "flex" : "none";
+      setGroupDisabled(elements.volumeInterior, service !== "interior" || m2Active);
+      setGroupDisabled(elements.volumeExterior, service !== "exterior" || m2Active);
+      setGroupDisabled(elements.volumeScenes, service !== "visual");
       elements.pack.disabled = service === "visual";
       elements.pack.style.opacity = service === "visual" ? 0.5 : 1;
       elements.animBlock.style.display = elements.optAnimation.checked ? "flex" : "none";
       elements.travelBlock.style.display = elements.optTravel.checked ? "flex" : "none";
       elements.toggleM2.disabled = service === "visual";
+      elements.toggleM2.closest(".form-item").classList.toggle("is-disabled", service === "visual");
       if (service === "visual") elements.toggleM2.checked = false;
-      elements.m2Field.style.display = elements.toggleM2.checked && service !== "visual" ? "block" : "none";
-      elements.optLandscape.closest("label").style.display = service === "interior" ? "none" : "flex";
+      setGroupDisabled(elements.m2Field, !(elements.toggleM2.checked && service !== "visual"));
+      const landscapeLabel = elements.optLandscape.closest("label");
+      setGroupDisabled(landscapeLabel, service === "interior");
     }
 
     function calculateAndRender() {
