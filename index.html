@@ -148,6 +148,8 @@
 
     .toggle-group {
       display: inline-flex;
+      align-self: flex-start;
+      width: fit-content;
       background: rgba(255, 255, 255, 0.35);
       border: none;
       border-radius: 999px;
@@ -352,6 +354,12 @@
       gap: 16px;
     }
 
+    .sidebar-currency {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .total {
       display: flex;
       flex-direction: column;
@@ -532,14 +540,6 @@
             <div>
               <label for="client-name">Nom client / Projet</label>
               <input id="client-name" type="text" placeholder="Villa Oceanis" autocomplete="off" />
-            </div>
-            <div>
-              <label for="currency">Devise d'affichage</label>
-              <div class="toggle-group" role="tablist" aria-label="Devise">
-                <button class="toggle-btn active" id="currency-mga">MGA</button>
-                <button class="toggle-btn" id="currency-eur">EUR</button>
-              </div>
-              <p class="helper">Interne en MGA. Conversion affichée automatiquement.</p>
             </div>
           </div>
         </section>
@@ -792,6 +792,13 @@
             <span class="subtle" id="total-label">Total HT</span>
             <strong id="total-main">0 Ar</strong>
             <span class="helper" id="total-alt">≈ 0 €</span>
+          </div>
+          <div class="sidebar-currency">
+            <label for="currency">Devise d'affichage</label>
+            <div class="toggle-group" role="tablist" aria-label="Devise">
+              <button class="toggle-btn active" id="currency-mga">MGA</button>
+              <button class="toggle-btn" id="currency-eur">EUR</button>
+            </div>
           </div>
           <div class="alert" id="empty-warning">Ajoute au moins 1 pièce, 1 scène ou 1 visuel.</div>
           <div class="pill" id="minimum-pill" style="display:none;">Minimum appliqué</div>
