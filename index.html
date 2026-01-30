@@ -1654,10 +1654,13 @@
     }
 
     function render(data) {
-      const displayTotal = elements.toggleTva.checked ? data.totalTtc : data.totalFinal;
-      elements.totalMain.textContent = formatCurrency(displayTotal);
-      elements.totalAlt.textContent = formatAltCurrency(displayTotal);
-      elements.totalLabel.textContent = elements.toggleTva.checked ? "Total TTC" : "Total HT";
+      const showTva = elements.toggleTva.checked;
+      const totalHT = data.totalFinal;
+      const totalTTC = data.totalTtc;
+      const grandTotal = showTva ? totalTTC : totalHT;
+      elements.totalMain.textContent = formatCurrency(grandTotal);
+      elements.totalAlt.textContent = formatAltCurrency(grandTotal);
+      elements.totalLabel.textContent = showTva ? "Total TTC" : "Total HT";
 
       const serviceLabel = {
         visual: "Visuels 3D",
@@ -1675,54 +1678,53 @@
           : data.volumes.zones.small + data.volumes.zones.medium + data.volumes.zones.large;
       elements.sumVolumes.textContent = data.m2Enabled ? `${data.m2Value} m²` : totalPieces;
       elements.sumVisuels.textContent = data.nbVisuels;
-      elements.sumDelay.textContent = data.multipliersSelected.delay;
-      elements.sumCycles.textContent = CONFIG.revisions.included;
+      const delayLabelMap = {
+        standard: "Standard",
+        express: "Express",
+        urgent: "Urgent"
+      };
+      elements.sumDelay.textContent = delayLabelMap[data.multipliersSelected.delay] || "Standard";
+      const cyclesIncluded = CONFIG.revisions.included;
+      const cyclesAsked = Math.max(1, Number(elements.cycles.value) || 1);
+      const cyclesExtra = Math.max(0, cyclesAsked - cyclesIncluded);
+      elements.sumCycles.textContent = cyclesExtra > 0 ? `${cyclesIncluded} (+${cyclesExtra})` : `${cyclesIncluded}`;
       elements.minimumPill.style.display = data.minimumApplied ? "inline-flex" : "none";
       const isEmpty = totalPieces === 0 && data.nbVisuels === 0 && (!data.m2Enabled || data.m2Value === 0);
       elements.emptyWarning.style.display = isEmpty ? "block" : "none";
 
-      const adjustments = data.options + data.revisions + data.fees;
-      const detailItems = [
-        data.options ? `<div class="summary-item sub"><span>Options</span><span>${formatCurrency(data.options)}</span></div>` : "",
-        data.revisions ? `<div class="summary-item sub"><span>Retours</span><span>${formatCurrency(data.revisions)}</span></div>` : "",
-        data.fees ? `<div class="summary-item sub"><span>Frais</span><span>${formatCurrency(data.fees)}</span></div>` : ""
+      const lines = [
+        `<div class="summary-item"><span>Base</span><span>${formatCurrency(data.base)}</span></div>`,
+        `<div class="summary-item"><span>Production</span><span>${formatCurrency(data.production)}</span></div>`,
+        data.productionDetail.pieces
+          ? `<div class="summary-item sub"><span>Pièces/Zones</span><span>${formatCurrency(data.productionDetail.pieces)}</span></div>`
+          : "",
+        data.productionDetail.scenes
+          ? `<div class="summary-item sub"><span>Scènes</span><span>${formatCurrency(data.productionDetail.scenes)}</span></div>`
+          : "",
+        data.productionDetail.visuals
+          ? `<div class="summary-item sub"><span>Visuels</span><span>${formatCurrency(data.productionDetail.visuals)}</span></div>`
+          : "",
+        data.productionDetail.renders
+          ? `<div class="summary-item sub"><span>Rendus</span><span>${formatCurrency(data.productionDetail.renders)}</span></div>`
+          : "",
+        data.productionDetail.m2
+          ? `<div class="summary-item sub"><span>Surface (m²)</span><span>${formatCurrency(data.productionDetail.m2)}</span></div>`
+          : "",
+        `<div class="summary-item"><span>Sous-total (HT)</span><span>${formatCurrency(data.subTotal)}</span></div>`,
+        `<div class="summary-item"><span>Multiplicateur (complexité × détails × délais × usage)</span><span>x${data.multiplierTotal.toFixed(2)}</span></div>`,
+        data.options ? `<div class="summary-item"><span>Options</span><span>${formatCurrency(data.options)}</span></div>` : "",
+        data.revisions ? `<div class="summary-item"><span>Retours</span><span>${formatCurrency(data.revisions)}</span></div>` : "",
+        data.fees ? `<div class="summary-item"><span>Frais</span><span>${formatCurrency(data.fees)}</span></div>` : "",
+        data.minimumApplied
+          ? `<div class="summary-item"><span>Minimum appliqué</span><span>${formatCurrency(CONFIG.minimum)}</span></div>`
+          : "",
+        showTva
+          ? `<div class="summary-item"><span>TVA (${data.tvaRate}%)</span><span>${formatCurrency(data.tvaAmount)}</span></div>`
+          : "",
+        `<div class="summary-item"><span>Total ${showTva ? "TTC" : "HT"}</span><span>${formatCurrency(grandTotal)}</span></div>`
       ].filter(Boolean);
 
-      elements.summaryAdvanced.innerHTML = `
-        <div class="summary-item"><span>Base</span><span>${formatCurrency(data.base)}</span></div>
-        <div class="summary-item"><span>Production</span><span>${formatCurrency(data.production)}</span></div>
-        ${data.productionDetail.pieces ? `<div class="summary-item sub"><span>Pièces/Zones</span><span>${formatCurrency(data.productionDetail.pieces)}</span></div>` : ""}
-        ${data.productionDetail.scenes ? `<div class="summary-item sub"><span>Scènes</span><span>${formatCurrency(data.productionDetail.scenes)}</span></div>` : ""}
-        ${data.productionDetail.visuals ? `<div class="summary-item sub"><span>Visuels</span><span>${formatCurrency(data.productionDetail.visuals)}</span></div>` : ""}
-        ${data.productionDetail.renders ? `<div class="summary-item sub"><span>Rendus</span><span>${formatCurrency(data.productionDetail.renders)}</span></div>` : ""}
-        ${data.productionDetail.m2 ? `<div class="summary-item sub"><span>m²</span><span>${formatCurrency(data.productionDetail.m2)}</span></div>` : ""}
-        <div class="summary-item"><span>Multiplicateur (complexité / urgence)</span><span>x${data.multiplierTotal.toFixed(2)}</span></div>
-        <div class="summary-item"><span>Sous-total (HT)</span><span>${formatCurrency(data.subTotal)}</span></div>
-        ${adjustments ? `<div class="summary-item"><span>Frais / options / retours</span><span>${formatCurrency(adjustments)}</span></div>` : ""}
-        ${
-          detailItems.length
-            ? `<div class="summary-item"><span></span><button type="button" class="summary-toggle" id="summary-details-toggle">Voir la décomposition</button></div>
-               <div class="summary-details" id="summary-details" hidden>${detailItems.join("")}</div>`
-            : ""
-        }
-        ${data.minimumApplied ? `<div class="summary-item"><span>Minimum appliqué</span><span>${formatCurrency(CONFIG.minimum)}</span></div>` : ""}
-        ${elements.toggleTva.checked ? `<div class="summary-item"><span>TVA (${data.tvaRate}%)</span><span>${formatCurrency(data.tvaAmount)}</span></div>` : ""}
-      `;
-
-      const detailsToggle = elements.summaryAdvanced.querySelector("#summary-details-toggle");
-      if (detailsToggle) {
-        const details = elements.summaryAdvanced.querySelector("#summary-details");
-        detailsToggle.addEventListener("click", () => {
-          const isHidden = details.hasAttribute("hidden");
-          if (isHidden) {
-            details.removeAttribute("hidden");
-            detailsToggle.textContent = "Masquer la décomposition";
-          } else {
-            details.setAttribute("hidden", "");
-            detailsToggle.textContent = "Voir la décomposition";
-          }
-        });
-      }
+      elements.summaryAdvanced.innerHTML = lines.join("");
 
       renderDeliverables(data);
     }
