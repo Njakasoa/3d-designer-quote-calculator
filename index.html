@@ -585,6 +585,133 @@
       backdrop-filter: blur(20px) saturate(170%);
     }
 
+    .billing-panel {
+      width: min(1100px, 96vw);
+    }
+
+    .billing-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .billing-section {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .billing-section h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .billing-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .billing-preview {
+      grid-column: 1 / -1;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7);
+    }
+
+    .invoice {
+      font-family: "Segoe UI", "Inter", sans-serif;
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .invoice-block {
+      flex: 1 1 220px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .invoice-block h4 {
+      margin: 0 0 6px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .invoice-table th,
+    .invoice-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      text-align: left;
+    }
+
+    .invoice-table th {
+      background: rgba(59, 130, 246, 0.1);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #1d4ed8;
+    }
+
+    .invoice-table td:last-child,
+    .invoice-table th:last-child {
+      text-align: right;
+    }
+
+    .invoice-total {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .invoice-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .custom-field-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .custom-field-row button {
+      padding: 10px 12px;
+    }
+
+    @media (max-width: 980px) {
+      .billing-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .settings-grid {
       display: flex;
       flex-wrap: wrap;
@@ -930,6 +1057,7 @@
         <div class="inline">
           <button class="btn btn-primary" id="copy-quote" type="button">Copier le devis</button>
           <button class="btn" id="download-quote" type="button">Télécharger .txt</button>
+          <button class="btn" id="open-billing" type="button">Générer une facture</button>
         </div>
       </section>
       </main>
@@ -995,6 +1123,127 @@
         </div>
       </div>
       <div id="settings-form" class="section-divider"></div>
+    </div>
+  </div>
+
+  <div class="settings-overlay" id="billing-overlay" aria-modal="true" role="dialog">
+    <div class="settings-panel billing-panel">
+      <div class="inline" style="justify-content: space-between;">
+        <div>
+          <h2>Informations de facturation</h2>
+          <p class="helper">Les données sont stockées localement sur ce navigateur.</p>
+        </div>
+        <div class="billing-actions">
+          <button class="btn" id="copy-invoice" type="button">Copier facture</button>
+          <button class="btn" id="download-invoice" type="button">Télécharger .html</button>
+          <button class="btn btn-primary" id="print-invoice" type="button">Imprimer / PDF</button>
+        </div>
+      </div>
+      <div class="billing-layout section-divider">
+        <div class="billing-section">
+          <h3>Émetteur (entreprise)</h3>
+          <div class="grid">
+            <div>
+              <label for="company-name">Nom / Société</label>
+              <input id="company-name" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-address">Adresse</label>
+              <input id="company-address" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-country">Pays</label>
+              <input id="company-country" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-postal">Code postal</label>
+              <input id="company-postal" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-phone">Numéro / téléphone</label>
+              <input id="company-phone" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-nif">NIF/STAT</label>
+              <input id="company-nif" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="company-email">Email (optionnel)</label>
+              <input id="company-email" type="email" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+        <div class="billing-section">
+          <h3>Client</h3>
+          <div class="grid">
+            <div>
+              <label for="client-billing-name">Nom</label>
+              <input id="client-billing-name" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-address">Adresse</label>
+              <input id="client-billing-address" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-country">Pays</label>
+              <input id="client-billing-country" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-postal">Code postal</label>
+              <input id="client-billing-postal" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-phone">Téléphone</label>
+              <input id="client-billing-phone" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-nif">NIF/STAT</label>
+              <input id="client-billing-nif" type="text" autocomplete="off" />
+            </div>
+            <div>
+              <label for="client-billing-email">Email (optionnel)</label>
+              <input id="client-billing-email" type="email" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+        <div class="billing-section">
+          <h3>Facture</h3>
+          <div class="grid">
+            <div>
+              <label for="invoice-number">Numéro</label>
+              <input id="invoice-number" type="text" placeholder="FAC-YYYYMMDD-XXX" autocomplete="off" />
+            </div>
+            <div>
+              <label for="invoice-date">Date</label>
+              <input id="invoice-date" type="date" />
+            </div>
+            <div>
+              <label for="invoice-due-date">Échéance (optionnel)</label>
+              <input id="invoice-due-date" type="date" />
+            </div>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="invoice-show-details" />
+            Afficher détail (Base/Production/Options/Retours/Frais/TVA)
+          </label>
+          <div>
+            <label for="invoice-notes">Notes / conditions</label>
+            <textarea id="invoice-notes" rows="4" placeholder="Conditions de paiement, modalités..."></textarea>
+          </div>
+        </div>
+        <div class="billing-section">
+          <h3>Champs personnalisés</h3>
+          <div id="custom-fields"></div>
+          <button class="btn" id="add-custom-field" type="button">+ Ajouter un champ</button>
+        </div>
+        <div class="billing-preview">
+          <div class="inline" style="justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Aperçu facture</h3>
+            <span class="tag" id="invoice-status">Brouillon</span>
+          </div>
+          <div id="invoice-preview" class="section-divider"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1212,8 +1461,38 @@
       deliverablesExpanded: true
     };
 
+    const BILLING_DEFAULT = {
+      issuer: {
+        company_name: "",
+        company_address: "",
+        company_country: "",
+        company_postal: "",
+        company_phone: "",
+        company_nif: "",
+        company_email: ""
+      },
+      client: {
+        client_name: "",
+        client_address: "",
+        client_country: "",
+        client_postal: "",
+        client_phone: "",
+        client_nif: "",
+        client_email: ""
+      },
+      invoice: {
+        invoice_number: "",
+        invoice_date: "",
+        due_date: "",
+        notes: "",
+        show_details: true
+      },
+      customFields: []
+    };
+
     let CONFIG = loadConfig();
     let UI_STATE = loadUIState();
+    let BILLING = loadBilling();
 
     const elements = {
       modeClient: document.getElementById("mode-client"),
@@ -1288,7 +1567,35 @@
       exportConfig: document.getElementById("export-config"),
       importConfig: document.getElementById("import-config"),
       copyQuote: document.getElementById("copy-quote"),
-      downloadQuote: document.getElementById("download-quote")
+      downloadQuote: document.getElementById("download-quote"),
+      openBilling: document.getElementById("open-billing"),
+      billingOverlay: document.getElementById("billing-overlay"),
+      copyInvoice: document.getElementById("copy-invoice"),
+      downloadInvoice: document.getElementById("download-invoice"),
+      printInvoice: document.getElementById("print-invoice"),
+      companyName: document.getElementById("company-name"),
+      companyAddress: document.getElementById("company-address"),
+      companyCountry: document.getElementById("company-country"),
+      companyPostal: document.getElementById("company-postal"),
+      companyPhone: document.getElementById("company-phone"),
+      companyNif: document.getElementById("company-nif"),
+      companyEmail: document.getElementById("company-email"),
+      clientBillingName: document.getElementById("client-billing-name"),
+      clientBillingAddress: document.getElementById("client-billing-address"),
+      clientBillingCountry: document.getElementById("client-billing-country"),
+      clientBillingPostal: document.getElementById("client-billing-postal"),
+      clientBillingPhone: document.getElementById("client-billing-phone"),
+      clientBillingNif: document.getElementById("client-billing-nif"),
+      clientBillingEmail: document.getElementById("client-billing-email"),
+      invoiceNumber: document.getElementById("invoice-number"),
+      invoiceDate: document.getElementById("invoice-date"),
+      invoiceDueDate: document.getElementById("invoice-due-date"),
+      invoiceNotes: document.getElementById("invoice-notes"),
+      invoiceShowDetails: document.getElementById("invoice-show-details"),
+      customFields: document.getElementById("custom-fields"),
+      addCustomField: document.getElementById("add-custom-field"),
+      invoicePreview: document.getElementById("invoice-preview"),
+      invoiceStatus: document.getElementById("invoice-status")
     };
 
     function loadConfig() {
@@ -1329,6 +1636,28 @@
 
     function saveUIState() {
       localStorage.setItem("tk_quote_calc_ui_v1", JSON.stringify(UI_STATE));
+    }
+
+    function loadBilling() {
+      const stored = localStorage.getItem("tk_quote_calc_billing_v1");
+      if (!stored) return structuredClone(BILLING_DEFAULT);
+      try {
+        const parsed = JSON.parse(stored);
+        return {
+          ...structuredClone(BILLING_DEFAULT),
+          ...parsed,
+          issuer: { ...BILLING_DEFAULT.issuer, ...parsed.issuer },
+          client: { ...BILLING_DEFAULT.client, ...parsed.client },
+          invoice: { ...BILLING_DEFAULT.invoice, ...parsed.invoice },
+          customFields: Array.isArray(parsed.customFields) ? parsed.customFields : []
+        };
+      } catch (error) {
+        return structuredClone(BILLING_DEFAULT);
+      }
+    }
+
+    function saveBilling() {
+      localStorage.setItem("tk_quote_calc_billing_v1", JSON.stringify(BILLING));
     }
 
     function showToast(message) {
@@ -1529,6 +1858,124 @@
         tvaRate: Number(elements.tvaRate.value) || 0,
         rate: Number(elements.rate.value) || CONFIG.eur_mga_rate
       };
+    }
+
+    function getTodayInputValue() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function buildInvoiceNumber() {
+      const today = new Date();
+      const dateStamp = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+      const randomSuffix = String(Math.floor(Math.random() * 900) + 100);
+      return `FAC-${dateStamp}-${randomSuffix}`;
+    }
+
+    function ensureInvoiceDefaults() {
+      let updated = false;
+      if (!BILLING.invoice.invoice_date) {
+        BILLING.invoice.invoice_date = getTodayInputValue();
+        updated = true;
+      }
+      if (!BILLING.invoice.invoice_number) {
+        BILLING.invoice.invoice_number = buildInvoiceNumber();
+        updated = true;
+      }
+      if (updated) {
+        saveBilling();
+      }
+      elements.invoiceDate.value = BILLING.invoice.invoice_date;
+      elements.invoiceNumber.value = BILLING.invoice.invoice_number;
+    }
+
+    function applyBillingState() {
+      elements.companyName.value = BILLING.issuer.company_name || "";
+      elements.companyAddress.value = BILLING.issuer.company_address || "";
+      elements.companyCountry.value = BILLING.issuer.company_country || "";
+      elements.companyPostal.value = BILLING.issuer.company_postal || "";
+      elements.companyPhone.value = BILLING.issuer.company_phone || "";
+      elements.companyNif.value = BILLING.issuer.company_nif || "";
+      elements.companyEmail.value = BILLING.issuer.company_email || "";
+      elements.clientBillingName.value = BILLING.client.client_name || "";
+      elements.clientBillingAddress.value = BILLING.client.client_address || "";
+      elements.clientBillingCountry.value = BILLING.client.client_country || "";
+      elements.clientBillingPostal.value = BILLING.client.client_postal || "";
+      elements.clientBillingPhone.value = BILLING.client.client_phone || "";
+      elements.clientBillingNif.value = BILLING.client.client_nif || "";
+      elements.clientBillingEmail.value = BILLING.client.client_email || "";
+      elements.invoiceNumber.value = BILLING.invoice.invoice_number || "";
+      elements.invoiceDate.value = BILLING.invoice.invoice_date || "";
+      elements.invoiceDueDate.value = BILLING.invoice.due_date || "";
+      elements.invoiceNotes.value = BILLING.invoice.notes || "";
+      elements.invoiceShowDetails.checked = BILLING.invoice.show_details ?? true;
+      renderCustomFields();
+    }
+
+    function syncBillingFromForm() {
+      BILLING.issuer = {
+        company_name: elements.companyName.value,
+        company_address: elements.companyAddress.value,
+        company_country: elements.companyCountry.value,
+        company_postal: elements.companyPostal.value,
+        company_phone: elements.companyPhone.value,
+        company_nif: elements.companyNif.value,
+        company_email: elements.companyEmail.value
+      };
+      BILLING.client = {
+        client_name: elements.clientBillingName.value,
+        client_address: elements.clientBillingAddress.value,
+        client_country: elements.clientBillingCountry.value,
+        client_postal: elements.clientBillingPostal.value,
+        client_phone: elements.clientBillingPhone.value,
+        client_nif: elements.clientBillingNif.value,
+        client_email: elements.clientBillingEmail.value
+      };
+      BILLING.invoice = {
+        invoice_number: elements.invoiceNumber.value,
+        invoice_date: elements.invoiceDate.value,
+        due_date: elements.invoiceDueDate.value,
+        notes: elements.invoiceNotes.value,
+        show_details: elements.invoiceShowDetails.checked
+      };
+      saveBilling();
+    }
+
+    function renderCustomFields() {
+      elements.customFields.innerHTML = "";
+      if (!Array.isArray(BILLING.customFields)) {
+        BILLING.customFields = [];
+      }
+      BILLING.customFields.forEach((field, index) => {
+        const row = document.createElement("div");
+        row.className = "custom-field-row";
+        row.innerHTML = `
+          <input type="text" placeholder="Libellé" value="${field.label || ""}" />
+          <input type="text" placeholder="Valeur" value="${field.value || ""}" />
+          <button class="btn" type="button">Supprimer</button>
+        `;
+        const [labelInput, valueInput, deleteButton] = row.querySelectorAll("input, button");
+        labelInput.addEventListener("input", event => {
+          BILLING.customFields[index].label = event.target.value;
+          saveBilling();
+          updateInvoicePreview();
+        });
+        valueInput.addEventListener("input", event => {
+          BILLING.customFields[index].value = event.target.value;
+          saveBilling();
+          updateInvoicePreview();
+        });
+        deleteButton.addEventListener("click", () => {
+          BILLING.customFields.splice(index, 1);
+          saveBilling();
+          renderCustomFields();
+          updateInvoicePreview();
+        });
+        elements.customFields.appendChild(row);
+      });
     }
 
     function getSelectedMultipliers(service) {
@@ -1925,6 +2372,7 @@
       render(data);
       syncStateFromInputs();
       saveUIState();
+      updateInvoicePreview();
     }
 
     function bindSteppers() {
@@ -2132,6 +2580,19 @@
       }
     }
 
+    function openBilling() {
+      elements.billingOverlay.style.display = "flex";
+      ensureInvoiceDefaults();
+      applyBillingState();
+      updateInvoicePreview();
+    }
+
+    function closeBilling(event) {
+      if (event.target === elements.billingOverlay) {
+        elements.billingOverlay.style.display = "none";
+      }
+    }
+
     function exportConfig() {
       const blob = new Blob([JSON.stringify(CONFIG, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
@@ -2155,6 +2616,175 @@
         }
       };
       reader.readAsText(file);
+    }
+
+    function formatInvoiceDate(dateValue) {
+      if (!dateValue) return "—";
+      const [year, month, day] = dateValue.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    function buildInvoiceLines(data, showDetails) {
+      const showTva = elements.toggleTva.checked;
+      if (!showDetails) {
+        const totalBase = data.totalFinal;
+        const lines = [{ label: "Prestation", amount: totalBase }];
+        if (showTva) {
+          lines.push({ label: `TVA (${data.tvaRate}%)`, amount: data.tvaAmount });
+        }
+        return lines;
+      }
+      const lines = [
+        { label: "Base", amount: data.base },
+        { label: "Production", amount: data.production }
+      ];
+      if (data.options) lines.push({ label: "Options", amount: data.options });
+      if (data.revisions) lines.push({ label: "Retours", amount: data.revisions });
+      if (data.fees) lines.push({ label: "Frais", amount: data.fees });
+      if (showTva) lines.push({ label: `TVA (${data.tvaRate}%)`, amount: data.tvaAmount });
+      return lines;
+    }
+
+    function buildInvoiceMarkup(data) {
+      ensureInvoiceDefaults();
+      const showDetails = BILLING.invoice.show_details ?? true;
+      const showTva = elements.toggleTva.checked;
+      const lines = buildInvoiceLines(data, showDetails);
+      const totalLabel = showTva ? "Total TTC" : "Total HT";
+      const totalValue = showTva ? data.totalTtc : data.totalFinal;
+
+      const issuerLines = [
+        BILLING.issuer.company_name,
+        BILLING.issuer.company_address,
+        BILLING.issuer.company_postal,
+        BILLING.issuer.company_country,
+        BILLING.issuer.company_phone,
+        BILLING.issuer.company_nif,
+        BILLING.issuer.company_email
+      ].filter(Boolean);
+      const clientLines = [
+        BILLING.client.client_name,
+        BILLING.client.client_address,
+        BILLING.client.client_postal,
+        BILLING.client.client_country,
+        BILLING.client.client_phone,
+        BILLING.client.client_nif,
+        BILLING.client.client_email
+      ].filter(Boolean);
+
+      const customFields = BILLING.customFields
+        .filter(field => field.label || field.value)
+        .map(
+          field =>
+            `<div class="invoice-block"><h4>${field.label || "Champ"}</h4><div>${field.value || "—"}</div></div>`
+        )
+        .join("");
+
+      return `
+        <div class="invoice">
+          <div class="invoice-header">
+            <div class="invoice-block">
+              <h4>Émetteur</h4>
+              <div>${issuerLines.length ? issuerLines.join("<br />") : "—"}</div>
+            </div>
+            <div class="invoice-block">
+              <h4>Client</h4>
+              <div>${clientLines.length ? clientLines.join("<br />") : "—"}</div>
+            </div>
+            <div class="invoice-block">
+              <h4>Facture</h4>
+              <div><strong>N°:</strong> ${BILLING.invoice.invoice_number || "—"}</div>
+              <div><strong>Date:</strong> ${formatInvoiceDate(BILLING.invoice.invoice_date)}</div>
+              <div><strong>Échéance:</strong> ${formatInvoiceDate(BILLING.invoice.due_date)}</div>
+            </div>
+          </div>
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lines
+                .map(line => `<tr><td>${line.label}</td><td>${formatCurrency(line.amount)}</td></tr>`)
+                .join("")}
+              <tr class="invoice-total">
+                <td>${totalLabel}</td>
+                <td>${formatCurrency(totalValue)}</td>
+              </tr>
+            </tbody>
+          </table>
+          ${BILLING.invoice.notes ? `<div class="invoice-note">${BILLING.invoice.notes}</div>` : ""}
+          ${customFields ? `<div class="invoice-header">${customFields}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function buildInvoiceDocument(markup) {
+      return `
+        <!DOCTYPE html>
+        <html lang="fr">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Facture ${BILLING.invoice.invoice_number || ""}</title>
+            <style>
+              body { font-family: "Segoe UI", "Inter", sans-serif; margin: 32px; color: #0f172a; }
+              .invoice { display: flex; flex-direction: column; gap: 16px; }
+              .invoice-header { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+              .invoice-block { flex: 1 1 220px; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; }
+              .invoice-block h4 { margin: 0 0 6px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+              .invoice-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+              .invoice-table th, .invoice-table td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+              .invoice-table th { background: #eff6ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #1d4ed8; }
+              .invoice-table td:last-child, .invoice-table th:last-child { text-align: right; }
+              .invoice-total { font-weight: 700; font-size: 1rem; }
+              .invoice-note { font-size: 0.85rem; color: #64748b; white-space: pre-wrap; }
+            </style>
+          </head>
+          <body>
+            ${markup}
+          </body>
+        </html>
+      `;
+    }
+
+    function updateInvoicePreview() {
+      const data = calculate();
+      const markup = buildInvoiceMarkup(data);
+      elements.invoicePreview.innerHTML = markup;
+      elements.invoiceStatus.textContent = BILLING.invoice.invoice_number ? "Prêt" : "Brouillon";
+    }
+
+    function copyInvoice() {
+      const markup = buildInvoiceMarkup(calculate());
+      const html = buildInvoiceDocument(markup);
+      navigator.clipboard.writeText(html).then(() => showToast("Facture copiée."));
+    }
+
+    function downloadInvoice() {
+      const markup = buildInvoiceMarkup(calculate());
+      const html = buildInvoiceDocument(markup);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `facture_${new Date().toISOString().slice(0, 10)}.html`;
+      link.click();
+    }
+
+    function printInvoice() {
+      const markup = buildInvoiceMarkup(calculate());
+      const html = buildInvoiceDocument(markup);
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        showToast("Impossible d'ouvrir la fenêtre d'impression.");
+        return;
+      }
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
     }
 
     function generateQuoteText(data) {
@@ -2231,6 +2861,7 @@
           setDeliverablesExpanded(false);
         }
       });
+      applyBillingState();
       applyUIState();
       bindSteppers();
 
@@ -2255,6 +2886,8 @@
       elements.currencyEur.addEventListener("click", () => setCurrency("EUR"));
       elements.openSettings.addEventListener("click", openSettings);
       elements.settingsOverlay.addEventListener("click", closeSettings);
+      elements.openBilling.addEventListener("click", openBilling);
+      elements.billingOverlay.addEventListener("click", closeBilling);
       elements.saveConfig.addEventListener("click", () => {
         readSettingsForm();
         elements.settingsOverlay.style.display = "none";
@@ -2266,9 +2899,60 @@
       });
       elements.copyQuote.addEventListener("click", copyQuote);
       elements.downloadQuote.addEventListener("click", downloadQuote);
+      elements.copyInvoice.addEventListener("click", copyInvoice);
+      elements.downloadInvoice.addEventListener("click", downloadInvoice);
+      elements.printInvoice.addEventListener("click", printInvoice);
       elements.deliverablesToggle.addEventListener("click", () =>
         setDeliverablesExpanded(!UI_STATE.deliverablesExpanded)
       );
+
+      [
+        elements.companyName,
+        elements.companyAddress,
+        elements.companyCountry,
+        elements.companyPostal,
+        elements.companyPhone,
+        elements.companyNif,
+        elements.companyEmail,
+        elements.clientBillingName,
+        elements.clientBillingAddress,
+        elements.clientBillingCountry,
+        elements.clientBillingPostal,
+        elements.clientBillingPhone,
+        elements.clientBillingNif,
+        elements.clientBillingEmail,
+        elements.invoiceNumber,
+        elements.invoiceDate,
+        elements.invoiceDueDate,
+        elements.invoiceNotes,
+        elements.invoiceShowDetails
+      ].forEach(input => {
+        input.addEventListener("input", () => {
+          syncBillingFromForm();
+          updateInvoicePreview();
+        });
+        input.addEventListener("change", () => {
+          syncBillingFromForm();
+          updateInvoicePreview();
+        });
+      });
+
+      elements.addCustomField.addEventListener("click", () => {
+        BILLING.customFields.push({ label: "", value: "" });
+        saveBilling();
+        renderCustomFields();
+        updateInvoicePreview();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") return;
+        if (elements.settingsOverlay.style.display === "flex") {
+          elements.settingsOverlay.style.display = "none";
+        }
+        if (elements.billingOverlay.style.display === "flex") {
+          elements.billingOverlay.style.display = "none";
+        }
+      });
 
       calculateAndRender();
     }
