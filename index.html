@@ -2497,12 +2497,20 @@
       });
     }
 
+    function setGroupVisibility(container, visible) {
+      container.style.display = visible ? "" : "none";
+      container.setAttribute("aria-hidden", visible ? "false" : "true");
+      container.querySelectorAll("input, select, textarea, button").forEach(control => {
+        control.disabled = !visible;
+      });
+    }
+
     function updateVisibility() {
       const service = elements.service.value;
       const m2Active = elements.toggleM2.checked && service !== "visual";
-      setGroupDisabled(elements.volumeInterior, service !== "interior" || m2Active);
-      setGroupDisabled(elements.volumeExterior, service !== "exterior" || m2Active);
-      setGroupDisabled(elements.volumeScenes, service !== "visual");
+      setGroupVisibility(elements.volumeInterior, service === "interior" && !m2Active);
+      setGroupVisibility(elements.volumeExterior, service === "exterior" && !m2Active);
+      setGroupVisibility(elements.volumeScenes, service === "visual");
       elements.pack.disabled = service === "visual";
       elements.pack.style.opacity = service === "visual" ? 0.5 : 1;
       elements.animBlock.style.display = elements.optAnimation.checked ? "flex" : "none";
