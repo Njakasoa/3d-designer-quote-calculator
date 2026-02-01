@@ -2040,6 +2040,11 @@
       return `m_${Math.random().toString(36).slice(2, 10)}`;
     }
 
+    const clone = obj => {
+      if (window.structuredClone) return structuredClone(obj);
+      return JSON.parse(JSON.stringify(obj));
+    };
+
     function deepMerge(target, source) {
       if (typeof target !== "object" || target === null) return source;
       const output = Array.isArray(target) ? [...target] : { ...target };
@@ -2057,11 +2062,11 @@
     }
 
     function ensureConfigDefaults(config) {
-      return deepMerge(structuredClone(CONFIG_DEFAULT), config || {});
+      return deepMerge(clone(CONFIG_DEFAULT), config || {});
     }
 
     function migrateConfig(config) {
-      if (!config) return structuredClone(CONFIG_DEFAULT);
+      if (!config) return clone(CONFIG_DEFAULT);
       if (config.version === 2) return ensureConfigDefaults(config);
       const migrated = {
         version: 2,
@@ -2073,10 +2078,10 @@
           exterior: config.render_tiers?.exterior || CONFIG_DEFAULT.render_tiers.exterior,
           interior: config.render_tiers?.interior || CONFIG_DEFAULT.render_tiers.interior
         },
-        resolution_pricing: structuredClone(CONFIG_DEFAULT.resolution_pricing),
+        resolution_pricing: clone(CONFIG_DEFAULT.resolution_pricing),
         multipliers: deepMerge(CONFIG_DEFAULT.multipliers, config.multipliers || {}),
-        masterplan: structuredClone(CONFIG_DEFAULT.masterplan),
-        typologies: structuredClone(CONFIG_DEFAULT.typologies),
+        masterplan: clone(CONFIG_DEFAULT.masterplan),
+        typologies: clone(CONFIG_DEFAULT.typologies),
         options: deepMerge(CONFIG_DEFAULT.options, config.options || {}),
         revisions: config.revisions || CONFIG_DEFAULT.revisions,
         minimum: config.minimum ?? CONFIG_DEFAULT.minimum,
@@ -2085,20 +2090,20 @@
         eur_mga_rate: config.eur_mga_rate ?? CONFIG_DEFAULT.eur_mga_rate,
         toggles: { ...CONFIG_DEFAULT.toggles, ...(config.toggles || {}) },
         tiered_m2: config.tiered_m2 || CONFIG_DEFAULT.tiered_m2,
-        presets: structuredClone(CONFIG_DEFAULT.presets)
+        presets: clone(CONFIG_DEFAULT.presets)
       };
       return ensureConfigDefaults(migrated);
     }
 
     function loadConfig() {
       const stored = localStorage.getItem("tk_quote_calc_config_v1");
-      if (!stored) return structuredClone(CONFIG_DEFAULT);
+      if (!stored) return clone(CONFIG_DEFAULT);
       try {
         const parsed = JSON.parse(stored);
         return migrateConfig(parsed);
       } catch (error) {
         showToast("Configuration locale invalide. Valeurs par défaut appliquées.");
-        return structuredClone(CONFIG_DEFAULT);
+        return clone(CONFIG_DEFAULT);
       }
     }
 
@@ -2107,7 +2112,7 @@
     }
 
     function resetConfig() {
-      CONFIG = structuredClone(CONFIG_DEFAULT);
+      CONFIG = clone(CONFIG_DEFAULT);
       saveConfig();
       buildSettingsForm();
       buildPresetSelect();
@@ -2136,11 +2141,11 @@
 
     function loadBilling() {
       const stored = localStorage.getItem("tk_quote_calc_billing_v1");
-      if (!stored) return structuredClone(BILLING_DEFAULT);
+      if (!stored) return clone(BILLING_DEFAULT);
       try {
         const parsed = JSON.parse(stored);
         return {
-          ...structuredClone(BILLING_DEFAULT),
+          ...clone(BILLING_DEFAULT),
           ...parsed,
           issuer: { ...BILLING_DEFAULT.issuer, ...parsed.issuer },
           client: { ...BILLING_DEFAULT.client, ...parsed.client },
@@ -2148,7 +2153,7 @@
           customFields: Array.isArray(parsed.customFields) ? parsed.customFields : []
         };
       } catch (error) {
-        return structuredClone(BILLING_DEFAULT);
+        return clone(BILLING_DEFAULT);
       }
     }
 
@@ -4132,10 +4137,10 @@
       const payload = {
         version: 2,
         exported_at: new Date().toISOString(),
-        parameters: structuredClone(CONFIG),
+        parameters: clone(CONFIG),
         inputs: {
-          ui: structuredClone({ ...UI_STATE, clientName: elements.clientName.value }),
-          billing: structuredClone(BILLING)
+          ui: clone({ ...UI_STATE, clientName: elements.clientName.value }),
+          billing: clone(BILLING)
         }
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -4186,7 +4191,7 @@
           UI_STATE = sanitizeState(incomingUi);
           const hadAdjustments = calcWarningState.adjusted;
           BILLING = {
-            ...structuredClone(BILLING_DEFAULT),
+            ...clone(BILLING_DEFAULT),
             ...(data.inputs.billing || {}),
             issuer: { ...BILLING_DEFAULT.issuer, ...(data.inputs.billing?.issuer || {}) },
             client: { ...BILLING_DEFAULT.client, ...(data.inputs.billing?.client || {}) },
