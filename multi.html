@@ -1443,7 +1443,6 @@
             </div>
           </div>
           <div class="alert" id="empty-warning">Ajoutez au moins 1 volume, 1 rendu ou 1 typologie.</div>
-          <div class="alert" id="calc-warning" style="display:none;"></div>
           <div class="pill" id="minimum-pill" style="display:none;">Minimum appliqué</div>
           <div class="summary-list" id="summary-modules"></div>
           <button class="summary-toggle" id="summary-toggle" type="button">Afficher le détail</button>
@@ -1925,29 +1924,6 @@
       customFields: []
     };
 
-    const LIMITS = {
-      renders: { min: 0, max: 200 },
-      volumes: { min: 0, max: 200 },
-      scenes: { min: 0, max: 200 },
-      animationSeconds: { min: 0, max: 120 },
-      masterplanAreaM2: { min: 0, max: 300000 },
-      masterplanAreaHa: { min: 0, max: 30 },
-      masterplanStructures: { min: 0, max: 200 },
-      m2Value: { min: 0, max: 5000 },
-      typologyInstances: { min: 0, max: 300 },
-      typologyVariationPercent: { min: 0, max: 100 }
-    };
-
-    const MAX_MODULE_TOTAL_MGA = 120000000;
-    const MAX_PROJECT_TOTAL_MGA = 250000000;
-    const MAX_TYPOLOGY_VARIATION_FIXED = 5000000;
-
-    const calcWarningState = {
-      adjusted: false,
-      capped: false
-    };
-    let pendingAdjustment = false;
-
     let CONFIG = loadConfig();
     let UI_STATE = loadUIState();
     let BILLING = loadBilling();
@@ -1976,7 +1952,6 @@
       totalLabel: document.getElementById("total-label"),
       minimumPill: document.getElementById("minimum-pill"),
       emptyWarning: document.getElementById("empty-warning"),
-      calcWarning: document.getElementById("calc-warning"),
       openSettings: document.getElementById("open-settings"),
       settingsOverlay: document.getElementById("settings-overlay"),
       settingsForm: document.getElementById("settings-form"),
@@ -2117,8 +2092,7 @@
       }
       try {
         const parsed = JSON.parse(stored);
-        const merged = { ...UI_DEFAULT, ...migrateLegacyUIState(parsed) };
-        return sanitizeState(merged);
+        return { ...UI_DEFAULT, ...migrateLegacyUIState(parsed) };
       } catch (error) {
         return { ...UI_DEFAULT };
       }
@@ -2166,61 +2140,8 @@
       setTimeout(() => alert.remove(), 3200);
     }
 
-    function toNumberSafe(value, fallback = 0) {
-      const number = Number(value);
-      return Number.isFinite(number) ? number : fallback;
-    }
-
-    function clampNumber(value, min, max) {
-      const number = toNumberSafe(value, min);
-      return Math.min(max, Math.max(min, number));
-    }
-
-    function sanitizeInt(value, min, max) {
-      const number = Math.round(toNumberSafe(value, min));
-      return Math.min(max, Math.max(min, number));
-    }
-
-    function markAdjustment() {
-      calcWarningState.adjusted = true;
-    }
-
-    function markPendingAdjustment() {
-      pendingAdjustment = true;
-    }
-
-    function markCapped() {
-      calcWarningState.capped = true;
-    }
-
-    function resetCalcWarnings() {
-      calcWarningState.adjusted = false;
-      calcWarningState.capped = false;
-    }
-
-    function updateCalcWarning() {
-      if (!elements.calcWarning) return;
-      if (calcWarningState.capped) {
-        elements.calcWarning.textContent = "Le total a été plafonné pour rester dans une limite réaliste.";
-        elements.calcWarning.style.display = "block";
-        return;
-      }
-      if (calcWarningState.adjusted) {
-        elements.calcWarning.textContent = "Certaines valeurs ont été ajustées pour rester dans des limites réalistes.";
-        elements.calcWarning.style.display = "block";
-        return;
-      }
-      elements.calcWarning.style.display = "none";
-    }
-
-    function ensureFinite(value, label, context) {
-      if (Number.isFinite(value)) return value;
-      console.warn(`Valeur non finie détectée (${label}).`, context);
-      return 0;
-    }
-
     function clamp(n, min, max) {
-      return clampNumber(n, min, max);
+      return Math.min(max, Math.max(min, n));
     }
 
     function debounce(fn, wait = 60) {
@@ -2231,194 +2152,11 @@
       };
     }
 
-    function sanitizeIntWithFlag(value, min, max) {
-      const before = toNumberSafe(value, min);
-      const after = sanitizeInt(value, min, max);
-      if (value !== undefined && value !== null && before !== after) {
-        markAdjustment();
-      }
-      return after;
-    }
-
-    function sanitizeNumberWithFlag(value, min, max) {
-      const before = toNumberSafe(value, min);
-      const after = clampNumber(value, min, max);
-      if (value !== undefined && value !== null && before !== after) {
-        markAdjustment();
-      }
-      return after;
-    }
-
-    function validateTiers(tiers) {
-      if (!Array.isArray(tiers) || tiers.length === 0) {
-        return { valid: false, tiers: [], lastUnit: 0 };
-      }
-      let previousLimit = 0;
-      let lastUnit = 0;
-      const normalized = [];
-      for (let i = 0; i < tiers.length; i += 1) {
-        const tier = tiers[i] || {};
-        const unit = toNumberSafe(tier.unit, NaN);
-        if (Number.isFinite(unit)) lastUnit = unit;
-        const rawUpTo = tier.upTo;
-        const upTo = rawUpTo === Infinity ? Infinity : toNumberSafe(rawUpTo, NaN);
-        const isInfinite = upTo === Infinity;
-        if (!Number.isFinite(unit) || unit < 0) {
-          return { valid: false, tiers: [], lastUnit };
-        }
-        if (!isInfinite && (!Number.isFinite(upTo) || upTo <= previousLimit)) {
-          return { valid: false, tiers: [], lastUnit };
-        }
-        if (isInfinite && i !== tiers.length - 1) {
-          return { valid: false, tiers: [], lastUnit };
-        }
-        normalized.push({ upTo, unit });
-        previousLimit = upTo;
-      }
-      return { valid: true, tiers: normalized, lastUnit };
-    }
-
-    function sanitizeTypologyState(typology) {
-      const categories = CONFIG.typologies.categories || [];
-      const safeCategory = categories.includes(typology.category) ? typology.category : categories[0];
-      if (typology.category && safeCategory !== typology.category) {
-        markAdjustment();
-      }
-      const safeComplexity = ["simple", "standard", "complex"].includes(typology.complexity)
-        ? typology.complexity
-        : "standard";
-      if (typology.complexity && safeComplexity !== typology.complexity) {
-        markAdjustment();
-      }
-      const variationMode = ["percent", "fixed"].includes(typology.variationMode)
-        ? typology.variationMode
-        : CONFIG.typologies.variation_mode;
-      const variationScope = ["per_instance", "per_typology"].includes(typology.variationScope)
-        ? typology.variationScope
-        : CONFIG.typologies.variation_scope;
-      const instances = sanitizeIntWithFlag(typology.instances, LIMITS.typologyInstances.min, LIMITS.typologyInstances.max);
-      const variationValue =
-        variationMode === "percent"
-          ? sanitizeNumberWithFlag(typology.variationValue, LIMITS.typologyVariationPercent.min, LIMITS.typologyVariationPercent.max)
-          : sanitizeNumberWithFlag(typology.variationValue, 0, MAX_TYPOLOGY_VARIATION_FIXED);
-      return {
-        id: typology.id || generateId(),
-        name: typology.name || "",
-        category: safeCategory || "",
-        complexity: safeComplexity,
-        instances,
-        variationsEnabled: Boolean(typology.variationsEnabled),
-        variationMode,
-        variationValue,
-        variationScope
-      };
-    }
-
-    function sanitizeModuleState(module) {
-      const baseModule = createModule(module?.type || "masterplan", module || {});
-      const safeType = MODULE_LABELS[baseModule.type] ? baseModule.type : "masterplan";
-      if (safeType !== baseModule.type) {
-        markAdjustment();
-      }
-      baseModule.type = safeType;
-      baseModule.name = baseModule.name || MODULE_LABELS[safeType];
-      baseModule.renders = {
-        aerial: sanitizeIntWithFlag(baseModule.renders?.aerial, LIMITS.renders.min, LIMITS.renders.max),
-        exterior: sanitizeIntWithFlag(baseModule.renders?.exterior, LIMITS.renders.min, LIMITS.renders.max),
-        interior: sanitizeIntWithFlag(baseModule.renders?.interior, LIMITS.renders.min, LIMITS.renders.max)
-      };
-      baseModule.volumes = {
-        small: sanitizeIntWithFlag(baseModule.volumes?.small, LIMITS.volumes.min, LIMITS.volumes.max),
-        medium: sanitizeIntWithFlag(baseModule.volumes?.medium, LIMITS.volumes.min, LIMITS.volumes.max),
-        large: sanitizeIntWithFlag(baseModule.volumes?.large, LIMITS.volumes.min, LIMITS.volumes.max)
-      };
-      baseModule.scenes = {
-        small: sanitizeIntWithFlag(baseModule.scenes?.small, LIMITS.scenes.min, LIMITS.scenes.max),
-        medium: sanitizeIntWithFlag(baseModule.scenes?.medium, LIMITS.scenes.min, LIMITS.scenes.max),
-        large: sanitizeIntWithFlag(baseModule.scenes?.large, LIMITS.scenes.min, LIMITS.scenes.max)
-      };
-      baseModule.animationSeconds = sanitizeIntWithFlag(
-        baseModule.animationSeconds,
-        LIMITS.animationSeconds.min,
-        LIMITS.animationSeconds.max
-      );
-      baseModule.m2 = {
-        enabled: Boolean(baseModule.m2?.enabled),
-        value: sanitizeIntWithFlag(baseModule.m2?.value, LIMITS.m2Value.min, LIMITS.m2Value.max)
-      };
-      const areaUnit = baseModule.masterplan?.areaUnit === "ha" ? "ha" : "m2";
-      if (baseModule.masterplan?.areaUnit && baseModule.masterplan.areaUnit !== areaUnit) {
-        markAdjustment();
-      }
-      baseModule.masterplan = {
-        ...baseModule.masterplan,
-        areaUnit,
-        area:
-          areaUnit === "ha"
-            ? sanitizeNumberWithFlag(baseModule.masterplan?.area, LIMITS.masterplanAreaHa.min, LIMITS.masterplanAreaHa.max)
-            : sanitizeNumberWithFlag(baseModule.masterplan?.area, LIMITS.masterplanAreaM2.min, LIMITS.masterplanAreaM2.max),
-        primary_structures: sanitizeIntWithFlag(
-          baseModule.masterplan?.primary_structures,
-          LIMITS.masterplanStructures.min,
-          LIMITS.masterplanStructures.max
-        ),
-        secondary_structures: sanitizeIntWithFlag(
-          baseModule.masterplan?.secondary_structures,
-          LIMITS.masterplanStructures.min,
-          LIMITS.masterplanStructures.max
-        ),
-        outdoor_features: sanitizeIntWithFlag(
-          baseModule.masterplan?.outdoor_features,
-          LIMITS.masterplanStructures.min,
-          LIMITS.masterplanStructures.max
-        ),
-        parking_zones: sanitizeIntWithFlag(
-          baseModule.masterplan?.parking_zones,
-          LIMITS.masterplanStructures.min,
-          LIMITS.masterplanStructures.max
-        )
-      };
-      baseModule.typologiesEnabled = Boolean(baseModule.typologiesEnabled);
-      baseModule.typologies = Array.isArray(baseModule.typologies)
-        ? baseModule.typologies.map(item => sanitizeTypologyState(item || {}))
-        : [];
-      const revisionCycles = sanitizeIntWithFlag(baseModule.revisions?.cycles, 1, 999);
-      baseModule.revisions = { cycles: revisionCycles };
-      return baseModule;
-    }
-
-    function sanitizeState(state) {
-      const sanitized = { ...state };
-      if (Array.isArray(state?.modules)) {
-        sanitized.modules = state.modules.map(module => sanitizeModuleState(module));
-      } else {
-        sanitized.modules = [];
-      }
-      return sanitized;
-    }
-
-    function sanitizeConfigPresets(config) {
-      if (!Array.isArray(config?.presets)) {
-        return config;
-      }
-      const sanitizedPresets = config.presets.map(preset => ({
-        ...preset,
-        name: preset?.name || "Preset",
-        modules: Array.isArray(preset?.modules) ? preset.modules.map(module => sanitizeModuleState(module)) : []
-      }));
-      return { ...config, presets: sanitizedPresets };
-    }
-
     function applyTieredPricing(qty, tiers) {
-      const safeQty = Math.max(0, toNumberSafe(qty, 0));
-      const { valid, tiers: safeTiers, lastUnit } = validateTiers(tiers);
-      if (!valid) {
-        return lastUnit ? safeQty * lastUnit : 0;
-      }
-      let remaining = safeQty;
+      let remaining = qty;
       let total = 0;
       let previousLimit = 0;
-      for (const tier of safeTiers) {
+      for (const tier of tiers) {
         const tierLimit = tier.upTo === Infinity ? remaining : Math.max(0, tier.upTo - previousLimit);
         const units = Math.min(remaining, tierLimit);
         if (units <= 0) {
@@ -2434,23 +2172,17 @@
     }
 
     function applyTieredUnits(qty, tiers, units) {
-      const safeQty = Math.max(0, toNumberSafe(qty, 0));
-      const { valid, tiers: safeTiers } = validateTiers(tiers);
-      if (!valid || !Array.isArray(units) || units.length !== safeTiers.length) {
-        return applyTieredPricing(safeQty, tiers);
+      if (!Array.isArray(units) || units.length !== tiers.length) {
+        return applyTieredPricing(qty, tiers);
       }
-      const safeUnits = units.map(unit => toNumberSafe(unit, NaN));
-      if (safeUnits.some(unit => !Number.isFinite(unit))) {
-        return applyTieredPricing(safeQty, tiers);
-      }
-      let remaining = safeQty;
+      let remaining = qty;
       let total = 0;
       let previousLimit = 0;
-      safeTiers.forEach((tier, index) => {
+      tiers.forEach((tier, index) => {
         const tierLimit = tier.upTo === Infinity ? remaining : Math.max(0, tier.upTo - previousLimit);
         const unitsQty = Math.min(remaining, tierLimit);
         if (unitsQty > 0) {
-          total += unitsQty * safeUnits[index];
+          total += unitsQty * units[index];
           remaining -= unitsQty;
         }
         previousLimit = tier.upTo;
@@ -2460,23 +2192,21 @@
 
     function formatCurrency(valueMga) {
       const rate = Number(CONFIG.eur_mga_rate) || CONFIG_DEFAULT.eur_mga_rate;
-      const safeValue = toNumberSafe(valueMga, 0);
       const displayCurrency = UI_STATE.currency;
       if (displayCurrency === "MGA") {
-        return `${Math.round(safeValue).toLocaleString("fr-FR")} Ar`;
+        return `${Math.round(valueMga).toLocaleString("fr-FR")} Ar`;
       }
-      const eur = safeValue / rate;
+      const eur = valueMga / rate;
       return `${eur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
     }
 
     function formatAltCurrency(valueMga) {
       const rate = Number(CONFIG.eur_mga_rate) || CONFIG_DEFAULT.eur_mga_rate;
-      const safeValue = toNumberSafe(valueMga, 0);
       if (UI_STATE.currency === "MGA") {
-        const eur = safeValue / rate;
+        const eur = valueMga / rate;
         return `≈ ${eur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
       }
-      return `≈ ${Math.round(safeValue).toLocaleString("fr-FR")} Ar`;
+      return `≈ ${Math.round(valueMga).toLocaleString("fr-FR")} Ar`;
     }
 
     function getPackResolution(packKey) {
@@ -2557,11 +2287,8 @@
           usage: form.usage || "commercial",
           delay: form.delay || "standard"
         },
-        m2: {
-          enabled: Boolean(form.toggleM2),
-          value: sanitizeInt(form.m2Value, LIMITS.m2Value.min, LIMITS.m2Value.max)
-        },
-        revisions: { cycles: sanitizeInt(form.cycles, 1, 999) || CONFIG.revisions.included },
+        m2: { enabled: Boolean(form.toggleM2), value: Number(form.m2Value) || 0 },
+        revisions: { cycles: Number(form.cycles) || CONFIG.revisions.included },
         options: {
           moodboard: Boolean(form.optMoodboard),
           plan2d: Boolean(form.optPlan),
@@ -2572,32 +2299,32 @@
           sources: Boolean(form.optSources),
           animation: Boolean(form.optAnimation)
         },
-        animationSeconds: sanitizeInt(form.animSeconds, LIMITS.animationSeconds.min, LIMITS.animationSeconds.max)
+        animationSeconds: Number(form.animSeconds) || 0
       });
 
       if (service === "visual") {
         module.scenes = {
-          small: sanitizeInt(form.scenesSmall, LIMITS.scenes.min, LIMITS.scenes.max),
-          medium: sanitizeInt(form.scenesMedium, LIMITS.scenes.min, LIMITS.scenes.max),
-          large: sanitizeInt(form.scenesLarge, LIMITS.scenes.min, LIMITS.scenes.max)
+          small: Number(form.scenesSmall) || 0,
+          medium: Number(form.scenesMedium) || 0,
+          large: Number(form.scenesLarge) || 0
         };
-        module.renders.exterior = sanitizeInt(form.nbVisuels, LIMITS.renders.min, LIMITS.renders.max);
+        module.renders.exterior = Number(form.nbVisuels) || 0;
       }
       if (service === "interior") {
         module.volumes = {
-          small: sanitizeInt(form.piecesSmall, LIMITS.volumes.min, LIMITS.volumes.max),
-          medium: sanitizeInt(form.piecesMedium, LIMITS.volumes.min, LIMITS.volumes.max),
-          large: sanitizeInt(form.piecesLarge, LIMITS.volumes.min, LIMITS.volumes.max)
+          small: Number(form.piecesSmall) || 0,
+          medium: Number(form.piecesMedium) || 0,
+          large: Number(form.piecesLarge) || 0
         };
-        module.renders.interior = sanitizeInt(form.nbVisuels, LIMITS.renders.min, LIMITS.renders.max);
+        module.renders.interior = Number(form.nbVisuels) || 0;
       }
       if (service === "exterior") {
         module.volumes = {
-          small: sanitizeInt(form.zonesSmall, LIMITS.volumes.min, LIMITS.volumes.max),
-          medium: sanitizeInt(form.zonesMedium, LIMITS.volumes.min, LIMITS.volumes.max),
-          large: sanitizeInt(form.zonesLarge, LIMITS.volumes.min, LIMITS.volumes.max)
+          small: Number(form.zonesSmall) || 0,
+          medium: Number(form.zonesMedium) || 0,
+          large: Number(form.zonesLarge) || 0
         };
-        module.renders.exterior = sanitizeInt(form.nbVisuels, LIMITS.renders.min, LIMITS.renders.max);
+        module.renders.exterior = Number(form.nbVisuels) || 0;
       }
       return module;
     }
@@ -2750,82 +2477,53 @@
     }
 
     function calculateRenderCost(category, count, resolution) {
-      const safeCount = sanitizeIntWithFlag(count, LIMITS.renders.min, LIMITS.renders.max);
-      if (safeCount <= 0) return 0;
+      if (count <= 0) return 0;
       const tiers = CONFIG.render_tiers[category];
       if (CONFIG.resolution_pricing.mode === "per_resolution") {
         const units = CONFIG.resolution_pricing.per_resolution_units?.[category]?.[resolution];
-        return applyTieredUnits(safeCount, tiers, units);
+        return applyTieredUnits(count, tiers, units);
       }
-      const baseCost = applyTieredPricing(safeCount, tiers);
-      const uplift = toNumberSafe(getResolutionUplift(category, resolution), 0);
-      return baseCost + uplift * safeCount;
+      const baseCost = applyTieredPricing(count, tiers);
+      const uplift = getResolutionUplift(category, resolution);
+      return baseCost + uplift * count;
     }
 
     function calculateTypologyCost(typology) {
-      const instances = sanitizeIntWithFlag(
-        typology.instances,
-        LIMITS.typologyInstances.min,
-        LIMITS.typologyInstances.max
-      );
-      if (instances === 0) {
-        return { baseCost: 0, duplicationCost: 0, variationCost: 0, total: 0 };
-      }
-      const complexity = ["simple", "standard", "complex"].includes(typology.complexity)
-        ? typology.complexity
-        : "standard";
-      const baseCost = ensureFinite(
-        toNumberSafe(CONFIG.typologies.complexity_costs[complexity], CONFIG.typologies.complexity_costs.standard),
-        "typology.baseCost",
-        typology
-      );
+      const instances = Math.max(1, Number(typology.instances) || 1);
+      const complexity = typology.complexity || "standard";
+      const baseCost = CONFIG.typologies.complexity_costs[complexity] || CONFIG.typologies.complexity_costs.standard;
       let duplicationCost = 0;
       if (instances > 1) {
         const additional = instances - 1;
         if (CONFIG.typologies.duplication_mode === "tiered") {
           duplicationCost = applyTieredPricing(additional, CONFIG.typologies.duplication_tiers);
         } else {
-          const duplicationFee = toNumberSafe(
-            CONFIG.typologies.duplication_fee[complexity],
-            CONFIG.typologies.duplication_fee.standard
-          );
+          const duplicationFee = CONFIG.typologies.duplication_fee[complexity] || CONFIG.typologies.duplication_fee.standard;
           duplicationCost = additional * duplicationFee;
         }
       }
       let variationCost = 0;
       if (typology.variationsEnabled) {
-        const variationMode = ["percent", "fixed"].includes(typology.variationMode)
-          ? typology.variationMode
-          : CONFIG.typologies.variation_mode;
-        const variationScope = ["per_instance", "per_typology"].includes(typology.variationScope)
-          ? typology.variationScope
-          : CONFIG.typologies.variation_scope;
+        const variationMode = typology.variationMode || CONFIG.typologies.variation_mode;
+        const variationValue = Number(typology.variationValue) || CONFIG.typologies.variation_value;
+        const variationScope = typology.variationScope || CONFIG.typologies.variation_scope;
         const scopeMultiplier = variationScope === "per_instance" ? instances : 1;
-        const rawVariationValue = toNumberSafe(typology.variationValue, CONFIG.typologies.variation_value);
         if (variationMode === "percent") {
-          const variationValue = clampNumber(rawVariationValue, LIMITS.typologyVariationPercent.min, LIMITS.typologyVariationPercent.max);
           variationCost = (baseCost + duplicationCost) * (variationValue / 100) * scopeMultiplier;
         } else {
-          const variationValue = clampNumber(rawVariationValue, 0, MAX_TYPOLOGY_VARIATION_FIXED);
           variationCost = variationValue * scopeMultiplier;
         }
       }
-      duplicationCost = ensureFinite(duplicationCost, "typology.duplicationCost", typology);
-      variationCost = ensureFinite(variationCost, "typology.variationCost", typology);
       return {
         baseCost,
         duplicationCost,
         variationCost,
-        total: ensureFinite(baseCost + duplicationCost + variationCost, "typology.total", typology)
+        total: baseCost + duplicationCost + variationCost
       };
     }
 
     function calculateModule(module) {
-      const base = ensureFinite(
-        toNumberSafe(module.type === "masterplan" ? CONFIG.masterplan.base_fee : CONFIG.base[module.type], 0),
-        "module.base",
-        module
-      );
+      const base = module.type === "masterplan" ? CONFIG.masterplan.base_fee : CONFIG.base[module.type];
       let production = 0;
       const breakdown = {
         volumes: 0,
@@ -2837,75 +2535,42 @@
       };
 
       if (module.type === "masterplan") {
-        const areaValue =
-          module.masterplan.areaUnit === "ha"
-            ? sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaHa.min, LIMITS.masterplanAreaHa.max)
-            : sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaM2.min, LIMITS.masterplanAreaM2.max);
-        const areaM2 = module.masterplan.areaUnit === "ha" ? areaValue * 10000 : areaValue;
+        const areaM2 = module.masterplan.areaUnit === "ha" ? module.masterplan.area * 10000 : module.masterplan.area;
         breakdown.area = applyTieredPricing(areaM2, CONFIG.masterplan.area_tiers);
-        breakdown.area = ensureFinite(breakdown.area, "masterplan.area", module);
         breakdown.program =
-          sanitizeIntWithFlag(
-            module.masterplan.primary_structures,
-            LIMITS.masterplanStructures.min,
-            LIMITS.masterplanStructures.max
-          ) *
-            toNumberSafe(CONFIG.masterplan.unit_costs.primary_structures, 0) +
-          sanitizeIntWithFlag(
-            module.masterplan.secondary_structures,
-            LIMITS.masterplanStructures.min,
-            LIMITS.masterplanStructures.max
-          ) *
-            toNumberSafe(CONFIG.masterplan.unit_costs.secondary_structures, 0) +
-          sanitizeIntWithFlag(
-            module.masterplan.outdoor_features,
-            LIMITS.masterplanStructures.min,
-            LIMITS.masterplanStructures.max
-          ) *
-            toNumberSafe(CONFIG.masterplan.unit_costs.outdoor_features, 0) +
-          sanitizeIntWithFlag(module.masterplan.parking_zones, LIMITS.masterplanStructures.min, LIMITS.masterplanStructures.max) *
-            toNumberSafe(CONFIG.masterplan.unit_costs.parking_zones, 0);
-        breakdown.program = ensureFinite(breakdown.program, "masterplan.program", module);
+          (Number(module.masterplan.primary_structures) || 0) * CONFIG.masterplan.unit_costs.primary_structures +
+          (Number(module.masterplan.secondary_structures) || 0) * CONFIG.masterplan.unit_costs.secondary_structures +
+          (Number(module.masterplan.outdoor_features) || 0) * CONFIG.masterplan.unit_costs.outdoor_features +
+          (Number(module.masterplan.parking_zones) || 0) * CONFIG.masterplan.unit_costs.parking_zones;
         production += breakdown.area + breakdown.program;
       }
 
       if (module.type === "interior" || module.type === "exterior") {
         if (module.m2.enabled && CONFIG.toggles.enable_tiered_m2) {
-          const m2Value = sanitizeIntWithFlag(module.m2.value, LIMITS.m2Value.min, LIMITS.m2Value.max);
-          breakdown.area = applyTieredPricing(m2Value, CONFIG.tiered_m2);
-          breakdown.area = ensureFinite(breakdown.area, "module.m2", module);
+          breakdown.area = applyTieredPricing(module.m2.value, CONFIG.tiered_m2);
           production += breakdown.area;
         } else {
           const packPricing = CONFIG.packs[module.type][module.pack];
           breakdown.volumes =
-            sanitizeIntWithFlag(module.volumes.small, LIMITS.volumes.min, LIMITS.volumes.max) *
-              toNumberSafe(packPricing.small, 0) +
-            sanitizeIntWithFlag(module.volumes.medium, LIMITS.volumes.min, LIMITS.volumes.max) *
-              toNumberSafe(packPricing.medium, 0) +
-            sanitizeIntWithFlag(module.volumes.large, LIMITS.volumes.min, LIMITS.volumes.max) *
-              toNumberSafe(packPricing.large, 0);
-          breakdown.volumes = ensureFinite(breakdown.volumes, "module.volumes", module);
+            (Number(module.volumes.small) || 0) * packPricing.small +
+            (Number(module.volumes.medium) || 0) * packPricing.medium +
+            (Number(module.volumes.large) || 0) * packPricing.large;
           production += breakdown.volumes;
         }
       }
 
       if (module.type === "visual") {
         breakdown.scenes =
-          sanitizeIntWithFlag(module.scenes.small, LIMITS.scenes.min, LIMITS.scenes.max) *
-            toNumberSafe(CONFIG.scenes.small, 0) +
-          sanitizeIntWithFlag(module.scenes.medium, LIMITS.scenes.min, LIMITS.scenes.max) *
-            toNumberSafe(CONFIG.scenes.medium, 0) +
-          sanitizeIntWithFlag(module.scenes.large, LIMITS.scenes.min, LIMITS.scenes.max) *
-            toNumberSafe(CONFIG.scenes.large, 0);
-        breakdown.scenes = ensureFinite(breakdown.scenes, "module.scenes", module);
+          (Number(module.scenes.small) || 0) * CONFIG.scenes.small +
+          (Number(module.scenes.medium) || 0) * CONFIG.scenes.medium +
+          (Number(module.scenes.large) || 0) * CONFIG.scenes.large;
         production += breakdown.scenes;
       }
 
       Object.entries(module.renders).forEach(([category, count]) => {
-        const renderCount = sanitizeIntWithFlag(count, LIMITS.renders.min, LIMITS.renders.max);
+        const renderCount = Math.max(0, Number(count) || 0);
         if (renderCount > 0) {
           breakdown.renders[category] = calculateRenderCost(category, renderCount, module.resolution);
-          breakdown.renders[category] = ensureFinite(breakdown.renders[category], `module.renders.${category}`, module);
           production += breakdown.renders[category];
         }
       });
@@ -2917,49 +2582,36 @@
           production += typologyCost.total;
         });
       }
-      production = ensureFinite(production, "module.production", module);
 
       const multiplierTotal =
-        toNumberSafe(CONFIG.multipliers.complexity[module.multipliers.complexity], 1) *
-        toNumberSafe(CONFIG.multipliers.details[module.multipliers.details], 1) *
-        toNumberSafe(CONFIG.multipliers.delay[module.multipliers.delay], 1) *
-        toNumberSafe(CONFIG.multipliers.usage[module.multipliers.usage], 1) *
-        (module.type === "masterplan" ? toNumberSafe(CONFIG.multipliers.topography[module.masterplan.topography], 1) : 1) *
-        (module.type === "masterplan" ? toNumberSafe(CONFIG.multipliers.circulation[module.masterplan.circulation], 1) : 1) *
-        (module.type === "masterplan" ? toNumberSafe(CONFIG.multipliers.landscape[module.masterplan.landscape], 1) : 1);
-      const safeMultiplier = ensureFinite(multiplierTotal, "module.multiplier", module);
+        CONFIG.multipliers.complexity[module.multipliers.complexity] *
+        CONFIG.multipliers.details[module.multipliers.details] *
+        CONFIG.multipliers.delay[module.multipliers.delay] *
+        CONFIG.multipliers.usage[module.multipliers.usage] *
+        (module.type === "masterplan" ? CONFIG.multipliers.topography[module.masterplan.topography] : 1) *
+        (module.type === "masterplan" ? CONFIG.multipliers.circulation[module.masterplan.circulation] : 1) *
+        (module.type === "masterplan" ? CONFIG.multipliers.landscape[module.masterplan.landscape] : 1);
 
-      const subTotal = ensureFinite((base + production) * safeMultiplier, "module.subTotal", module);
+      const subTotal = (base + production) * multiplierTotal;
 
       let options = 0;
-      if (module.options.moodboard) options += toNumberSafe(CONFIG.options.moodboard, 0);
-      if (module.options.plan2d) options += toNumberSafe(CONFIG.options.plan2d, 0);
-      if (module.options.shopping) options += toNumberSafe(CONFIG.options.shopping, 0);
-      if (module.options.modeling) options += production * toNumberSafe(CONFIG.options.modeling_pct, 0);
-      if (module.options.furniture) options += production * toNumberSafe(CONFIG.options.furniture_pct, 0);
-      if (module.options.landscape) options += production * toNumberSafe(CONFIG.options.landscape_pct, 0);
-      if (module.options.sources) options += subTotal * toNumberSafe(CONFIG.options.sources_pct, 0);
+      if (module.options.moodboard) options += CONFIG.options.moodboard;
+      if (module.options.plan2d) options += CONFIG.options.plan2d;
+      if (module.options.shopping) options += CONFIG.options.shopping;
+      if (module.options.modeling) options += production * CONFIG.options.modeling_pct;
+      if (module.options.furniture) options += production * CONFIG.options.furniture_pct;
+      if (module.options.landscape) options += production * CONFIG.options.landscape_pct;
+      if (module.options.sources) options += subTotal * CONFIG.options.sources_pct;
       if (module.options.animation) {
-        const seconds = sanitizeIntWithFlag(
-          module.animationSeconds,
-          LIMITS.animationSeconds.min,
-          LIMITS.animationSeconds.max
-        );
-        options += seconds * toNumberSafe(CONFIG.options.animation_sec, 0);
+        const seconds = clamp(Number(module.animationSeconds) || 0, 0, 120);
+        options += seconds * CONFIG.options.animation_sec;
       }
-      options = ensureFinite(options, "module.options", module);
 
-      const cyclesAsked = Math.max(1, Math.round(toNumberSafe(module.revisions.cycles, 1)));
-      const cyclesIncluded = toNumberSafe(CONFIG.revisions.included, 0);
-      const cyclesExtra = Math.max(0, cyclesAsked - cyclesIncluded);
-      const revisions = cyclesExtra * (base + production) * toNumberSafe(CONFIG.revisions.rate, 0);
+      const cyclesAsked = Math.max(1, Number(module.revisions.cycles) || 1);
+      const cyclesExtra = Math.max(0, cyclesAsked - CONFIG.revisions.included);
+      const revisions = cyclesExtra * (base + production) * CONFIG.revisions.rate;
 
-      const safeRevisions = ensureFinite(revisions, "module.revisions", module);
-      let total = ensureFinite(subTotal + options + safeRevisions, "module.total", module);
-      if (total > MAX_MODULE_TOTAL_MGA) {
-        total = MAX_MODULE_TOTAL_MGA;
-        markCapped();
-      }
+      const total = subTotal + options + revisions;
 
       return {
         id: module.id,
@@ -2974,30 +2626,20 @@
         multiplierTotal,
         subTotal,
         options,
-        revisions: safeRevisions,
+        revisions,
         total
       };
     }
 
     function calculateProject() {
       const moduleTotals = UI_STATE.modules.map(module => calculateModule(module));
-      const totalBrutRaw = moduleTotals.reduce((sum, module) => sum + module.total, 0);
-      let totalBrut = ensureFinite(totalBrutRaw, "project.totalBrut", moduleTotals);
-      if (totalBrut > MAX_PROJECT_TOTAL_MGA) {
-        totalBrut = MAX_PROJECT_TOTAL_MGA;
-        markCapped();
-      }
-      const minimumValue = toNumberSafe(CONFIG.minimum, 0);
-      const minimumApplied = totalBrut < minimumValue;
-      let totalFinal = minimumApplied ? minimumValue : totalBrut;
-      if (totalFinal > MAX_PROJECT_TOTAL_MGA) {
-        totalFinal = MAX_PROJECT_TOTAL_MGA;
-        markCapped();
-      }
+      const totalBrut = moduleTotals.reduce((sum, module) => sum + module.total, 0);
+      const minimumApplied = totalBrut < CONFIG.minimum;
+      const totalFinal = minimumApplied ? CONFIG.minimum : totalBrut;
       const vatEnabled = CONFIG.vat_enabled ?? false;
-      const tvaRate = vatEnabled ? toNumberSafe(CONFIG.vat_rate, 0) : 0;
-      const tvaAmount = ensureFinite(totalFinal * (tvaRate / 100), "project.tvaAmount", totalFinal);
-      const totalTtc = ensureFinite(totalFinal + tvaAmount, "project.totalTtc", totalFinal);
+      const tvaRate = vatEnabled ? Number(CONFIG.vat_rate) || 0 : 0;
+      const tvaAmount = totalFinal * (tvaRate / 100);
+      const totalTtc = totalFinal + tvaAmount;
 
       return {
         modules: moduleTotals,
@@ -3023,12 +2665,11 @@
       const isEmptyProject =
         UI_STATE.modules.length === 0 ||
         UI_STATE.modules.every(module => {
-          const hasVolumes = Object.values(module.volumes || {}).some(value => toNumberSafe(value, 0) > 0);
-          const hasScenes = Object.values(module.scenes || {}).some(value => toNumberSafe(value, 0) > 0);
-          const hasRenders = Object.values(module.renders || {}).some(value => toNumberSafe(value, 0) > 0);
-          const hasArea = toNumberSafe(module.masterplan?.area, 0) > 0 || toNumberSafe(module.m2?.value, 0) > 0;
-          const hasTypologies =
-            module.typologiesEnabled && module.typologies.some(t => toNumberSafe(t.instances, 0) > 0);
+          const hasVolumes = Object.values(module.volumes || {}).some(value => Number(value) > 0);
+          const hasScenes = Object.values(module.scenes || {}).some(value => Number(value) > 0);
+          const hasRenders = Object.values(module.renders || {}).some(value => Number(value) > 0);
+          const hasArea = module.masterplan?.area > 0 || module.m2?.value > 0;
+          const hasTypologies = module.typologiesEnabled && module.typologies.some(t => (Number(t.instances) || 0) > 0);
           return !(hasVolumes || hasScenes || hasRenders || hasArea || hasTypologies);
         });
       elements.emptyWarning.style.display = isEmptyProject ? "block" : "none";
@@ -3091,9 +2732,9 @@
       project.modules.forEach(module => {
         const moduleState = UI_STATE.modules.find(item => item.id === module.id);
         if (!moduleState) return;
-        totalRenders.aerial += toNumberSafe(moduleState.renders.aerial, 0);
-        totalRenders.exterior += toNumberSafe(moduleState.renders.exterior, 0);
-        totalRenders.interior += toNumberSafe(moduleState.renders.interior, 0);
+        totalRenders.aerial += Number(moduleState.renders.aerial) || 0;
+        totalRenders.exterior += Number(moduleState.renders.exterior) || 0;
+        totalRenders.interior += Number(moduleState.renders.interior) || 0;
         resolutionBadges.add(moduleState.resolution);
         if (moduleState.options.sources) optionBadges.add("Sources");
         if (moduleState.options.animation) optionBadges.add("Animation");
@@ -3128,7 +2769,7 @@
     }
 
     function buildTypologyLabel(typology) {
-      const instances = toNumberSafe(typology.instances, 0);
+      const instances = Number(typology.instances) || 0;
       return `${typology.name || "Typologie"} ×${instances}`;
     }
 
@@ -3220,20 +2861,13 @@
       });
     }
 
-    function calculateAndRender(options = {}) {
-      const shouldFlagAdjustment = options.adjusted || pendingAdjustment;
-      pendingAdjustment = false;
-      resetCalcWarnings();
-      if (shouldFlagAdjustment) {
-        markAdjustment();
-      }
+    function calculateAndRender() {
       const project = calculateProject();
       renderSummary(project);
       renderProjectDeliverables(project);
       updateModuleCardOutputs(project);
       saveUIState();
       updateInvoicePreview();
-      updateCalcWarning();
     }
 
     function updateModuleVisibility(card, module) {
@@ -3287,7 +2921,7 @@
             </div>
             <div class="module-typology-field">
               <label>Quantité</label>
-              <input type="number" min="0" value="${typology.instances ?? 0}" />
+              <input type="number" min="1" value="${typology.instances || 1}" />
             </div>
             <div class="module-typology-field module-typology-variations">
               <label class="checkbox">
@@ -3331,13 +2965,7 @@
           debouncedCalculateAndRender();
         });
         instancesInput.addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.typologyInstances.min, LIMITS.typologyInstances.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          typology.instances = nextValue;
-          event.target.value = nextValue;
+          typology.instances = Number(event.target.value) || 1;
           debouncedCalculateAndRender();
         });
         variationsToggle.addEventListener("change", event => {
@@ -3346,28 +2974,10 @@
         });
         variationMode.addEventListener("change", event => {
           typology.variationMode = event.target.value;
-          const maxValue =
-            event.target.value === "percent" ? LIMITS.typologyVariationPercent.max : MAX_TYPOLOGY_VARIATION_FIXED;
-          const nextValue = clampNumber(variationValue.value, 0, maxValue);
-          const rawValue = toNumberSafe(variationValue.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          typology.variationValue = nextValue;
-          variationValue.value = nextValue;
           debouncedCalculateAndRender();
         });
         variationValue.addEventListener("input", event => {
-          const mode = variationMode.value;
-          const maxValue =
-            mode === "percent" ? LIMITS.typologyVariationPercent.max : MAX_TYPOLOGY_VARIATION_FIXED;
-          const nextValue = clampNumber(event.target.value, 0, maxValue);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          typology.variationValue = nextValue;
-          event.target.value = nextValue;
+          typology.variationValue = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         row.querySelector("button").addEventListener("click", () => {
@@ -3475,29 +3085,11 @@
         });
 
         card.querySelector(".module-site-area").addEventListener("input", event => {
-          const isHa = module.masterplan.areaUnit === "ha";
-          const limits = isHa ? LIMITS.masterplanAreaHa : LIMITS.masterplanAreaM2;
-          const nextValue = clampNumber(event.target.value, limits.min, limits.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.area = nextValue;
-          event.target.value = nextValue;
+          module.masterplan.area = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-site-unit").addEventListener("change", event => {
           module.masterplan.areaUnit = event.target.value;
-          const areaInput = card.querySelector(".module-site-area");
-          const isHa = module.masterplan.areaUnit === "ha";
-          const limits = isHa ? LIMITS.masterplanAreaHa : LIMITS.masterplanAreaM2;
-          const nextValue = clampNumber(areaInput.value, limits.min, limits.max);
-          const rawValue = toNumberSafe(areaInput.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.area = nextValue;
-          areaInput.value = nextValue;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-topography").addEventListener("change", event => {
@@ -3513,74 +3105,32 @@
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-primary-structures").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.masterplanStructures.min, LIMITS.masterplanStructures.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.primary_structures = nextValue;
-          event.target.value = nextValue;
+          module.masterplan.primary_structures = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-secondary-structures").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.masterplanStructures.min, LIMITS.masterplanStructures.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.secondary_structures = nextValue;
-          event.target.value = nextValue;
+          module.masterplan.secondary_structures = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-outdoor-features").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.masterplanStructures.min, LIMITS.masterplanStructures.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.outdoor_features = nextValue;
-          event.target.value = nextValue;
+          module.masterplan.outdoor_features = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-parking-zones").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.masterplanStructures.min, LIMITS.masterplanStructures.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.masterplan.parking_zones = nextValue;
-          event.target.value = nextValue;
+          module.masterplan.parking_zones = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
 
         card.querySelector(".module-volume-small").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.volumes.min, LIMITS.volumes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.volumes.small = nextValue;
-          event.target.value = nextValue;
+          module.volumes.small = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-volume-medium").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.volumes.min, LIMITS.volumes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.volumes.medium = nextValue;
-          event.target.value = nextValue;
+          module.volumes.medium = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-volume-large").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.volumes.min, LIMITS.volumes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.volumes.large = nextValue;
-          event.target.value = nextValue;
+          module.volumes.large = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-use-m2").addEventListener("change", event => {
@@ -3589,75 +3139,33 @@
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-m2-value").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.m2Value.min, LIMITS.m2Value.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.m2.value = nextValue;
-          event.target.value = nextValue;
+          module.m2.value = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
 
         card.querySelector(".module-scene-small").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.scenes.min, LIMITS.scenes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.scenes.small = nextValue;
-          event.target.value = nextValue;
+          module.scenes.small = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-scene-medium").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.scenes.min, LIMITS.scenes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.scenes.medium = nextValue;
-          event.target.value = nextValue;
+          module.scenes.medium = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-scene-large").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.scenes.min, LIMITS.scenes.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.scenes.large = nextValue;
-          event.target.value = nextValue;
+          module.scenes.large = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
 
         card.querySelector(".module-render-aerial").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.renders.min, LIMITS.renders.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.renders.aerial = nextValue;
-          event.target.value = nextValue;
+          module.renders.aerial = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-render-exterior").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.renders.min, LIMITS.renders.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.renders.exterior = nextValue;
-          event.target.value = nextValue;
+          module.renders.exterior = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-render-interior").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.renders.min, LIMITS.renders.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.renders.interior = nextValue;
-          event.target.value = nextValue;
+          module.renders.interior = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
 
@@ -3716,24 +3224,12 @@
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-animation-seconds").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, LIMITS.animationSeconds.min, LIMITS.animationSeconds.max);
-          const rawValue = toNumberSafe(event.target.value, 0);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.animationSeconds = nextValue;
-          event.target.value = nextValue;
+          module.animationSeconds = Number(event.target.value) || 0;
           debouncedCalculateAndRender();
         });
 
         card.querySelector(".module-cycles").addEventListener("input", event => {
-          const nextValue = sanitizeInt(event.target.value, 1, 999);
-          const rawValue = toNumberSafe(event.target.value, 1);
-          if (rawValue !== nextValue) {
-            markPendingAdjustment();
-          }
-          module.revisions.cycles = nextValue;
-          event.target.value = nextValue;
+          module.revisions.cycles = Number(event.target.value) || 1;
           debouncedCalculateAndRender();
         });
         card.querySelector(".module-duplicate").addEventListener("click", () => {
@@ -4060,7 +3556,7 @@
         } else if (input.dataset.fieldType === "string") {
           target[key] = input.value;
         } else {
-          target[key] = toNumberSafe(input.value, 0);
+          target[key] = Number(input.value);
         }
       });
       elements.settingsForm.querySelectorAll("textarea[data-json]").forEach(area => {
@@ -4072,12 +3568,9 @@
           showToast("JSON de preset invalide.");
         }
       });
-      resetCalcWarnings();
-      CONFIG = sanitizeConfigPresets(CONFIG);
-      const hadAdjustments = calcWarningState.adjusted;
       saveConfig();
       buildPresetSelect();
-      calculateAndRender({ adjusted: hadAdjustments });
+      calculateAndRender();
     }
 
     function openSettings() {
@@ -4135,14 +3628,11 @@
       reader.onload = event => {
         try {
           const data = JSON.parse(event.target.result);
-          resetCalcWarnings();
           CONFIG = migrateConfig(data);
-          CONFIG = sanitizeConfigPresets(CONFIG);
-          const hadAdjustments = calcWarningState.adjusted;
           saveConfig();
           buildSettingsForm();
           buildPresetSelect();
-          calculateAndRender({ adjusted: hadAdjustments });
+          calculateAndRender();
         } catch (error) {
           showToast("Fichier JSON invalide.");
         }
@@ -4157,9 +3647,7 @@
           const data = JSON.parse(event.target.result);
           if (!data.parameters || !data.inputs) throw new Error("JSON invalide");
           const snapshotParameters = { ...(data.parameters || {}) };
-          resetCalcWarnings();
           CONFIG = migrateConfig(snapshotParameters);
-          CONFIG = sanitizeConfigPresets(CONFIG);
           const incomingUi = { ...UI_DEFAULT, ...(data.inputs.ui || {}) };
           if (!incomingUi.modules || data.version === 1) {
             if (incomingUi.form) {
@@ -4168,8 +3656,7 @@
               incomingUi.modules = [createModule("masterplan")];
             }
           }
-          UI_STATE = sanitizeState(incomingUi);
-          const hadAdjustments = calcWarningState.adjusted;
+          UI_STATE = incomingUi;
           BILLING = {
             ...structuredClone(BILLING_DEFAULT),
             ...(data.inputs.billing || {}),
@@ -4185,7 +3672,7 @@
           applyUIState();
           applyBillingState();
           updateInvoicePreview();
-          calculateAndRender({ adjusted: hadAdjustments });
+          calculateAndRender();
         } catch (error) {
           showToast("Fichier JSON invalide.");
         }
@@ -4490,12 +3977,9 @@
         const presetIndex = Number(elements.presetSelect.value) || 0;
         const preset = CONFIG.presets[presetIndex];
         if (!preset) return;
-        resetCalcWarnings();
-        const sanitizedPreset = sanitizeState({ modules: preset.modules });
-        const hadAdjustments = calcWarningState.adjusted;
-        UI_STATE.modules = sanitizedPreset.modules;
+        UI_STATE.modules = preset.modules.map(module => createModule(module.type, module));
         renderModules();
-        calculateAndRender({ adjusted: hadAdjustments });
+        debouncedCalculateAndRender();
       });
 
       [
