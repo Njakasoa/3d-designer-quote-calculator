@@ -1165,23 +1165,6 @@
         </div>
       </section>
 
-      <section class="glass panel" aria-label="TVA">
-        <h2>TVA & conversion</h2>
-        <div class="form-row">
-          <div class="form-item">
-            <label class="checkbox"><input type="checkbox" id="toggle-tva" /> Ajouter TVA</label>
-            <div class="inline">
-              <input id="tva-rate" type="number" min="0" value="0" />
-              <span class="helper">%</span>
-            </div>
-          </div>
-          <div class="form-item">
-            <label for="rate">Taux EUR → MGA</label>
-            <input id="rate" type="number" min="0" value="4800" />
-          </div>
-        </div>
-      </section>
-
       <section class="glass panel" aria-label="Export">
         <h2>Export devis</h2>
         <div class="inline">
@@ -1443,6 +1426,7 @@
       revisions: { included: 2, rate: 0.1 },
       travel: { flat: 50000, km: 1500 },
       minimum: 350000,
+      vat_enabled: false,
       vat_rate: 0,
       eur_mga_rate: 4800,
       toggles: {
@@ -1576,7 +1560,6 @@
 
     const UI_DEFAULT = {
       currency: "MGA",
-      showTva: false,
       deliverablesExpanded: true
     };
 
@@ -1632,9 +1615,6 @@
       delay: document.getElementById("delay"),
       toggleM2: document.getElementById("toggle-m2"),
       m2Value: document.getElementById("m2-value"),
-      toggleTva: document.getElementById("toggle-tva"),
-      tvaRate: document.getElementById("tva-rate"),
-      rate: document.getElementById("rate"),
       cycles: document.getElementById("cycles"),
       optTravel: document.getElementById("opt-travel"),
       travelKm: document.getElementById("travel-km"),
@@ -1707,6 +1687,16 @@
       invoiceStatus: document.getElementById("invoice-status")
     };
 
+    function ensureConfigDefaults(config) {
+      return {
+        ...config,
+        vat_enabled: config.vat_enabled ?? CONFIG_DEFAULT.vat_enabled,
+        vat_rate: config.vat_rate ?? CONFIG_DEFAULT.vat_rate,
+        eur_mga_rate: config.eur_mga_rate ?? CONFIG_DEFAULT.eur_mga_rate,
+        toggles: { ...CONFIG_DEFAULT.toggles, ...(config.toggles || {}) }
+      };
+    }
+
     function loadConfig() {
       const stored = localStorage.getItem("tk_quote_calc_config_v1");
       if (!stored) return structuredClone(CONFIG_DEFAULT);
@@ -1715,7 +1705,7 @@
         if (!parsed.base || !parsed.packs || !parsed.multipliers) {
           throw new Error("Invalid config");
         }
-        return parsed;
+        return ensureConfigDefaults(parsed);
       } catch (error) {
         showToast("Configuration locale invalide. Valeurs par défaut appliquées.");
         return structuredClone(CONFIG_DEFAULT);
@@ -1829,7 +1819,7 @@
     }
 
     function formatCurrency(valueMga) {
-      const rate = Number(elements.rate.value) || CONFIG.eur_mga_rate;
+      const rate = Number(CONFIG.eur_mga_rate) || CONFIG_DEFAULT.eur_mga_rate;
       const displayCurrency = UI_STATE.currency;
       if (displayCurrency === "MGA") {
         return `${Math.round(valueMga).toLocaleString("fr-FR")} Ar`;
@@ -1839,7 +1829,7 @@
     }
 
     function formatAltCurrency(valueMga) {
-      const rate = Number(elements.rate.value) || CONFIG.eur_mga_rate;
+      const rate = Number(CONFIG.eur_mga_rate) || CONFIG_DEFAULT.eur_mga_rate;
       if (UI_STATE.currency === "MGA") {
         const eur = valueMga / rate;
         return `≈ ${eur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
@@ -1892,7 +1882,6 @@
 
     function applyUIState() {
       const form = UI_STATE.form || {};
-      elements.toggleTva.checked = UI_STATE.showTva ?? false;
       elements.service.value = form.service || "visual";
       elements.pack.value = form.pack || "standard";
       elements.nbVisuels.value = form.nbVisuels ?? 0;
@@ -1925,12 +1914,9 @@
       elements.optAnimation.checked = form.optAnimation ?? false;
       elements.animSeconds.value = form.animSeconds ?? 0;
       elements.clientName.value = form.clientName || "";
-      elements.tvaRate.value = form.tvaRate ?? CONFIG.vat_rate;
-      elements.rate.value = form.rate ?? CONFIG.eur_mga_rate;
     }
 
     function syncStateFromInputs() {
-      UI_STATE.showTva = elements.toggleTva.checked;
       UI_STATE.form = {
         service: elements.service.value,
         pack: elements.pack.value,
@@ -1963,9 +1949,7 @@
         optSources: elements.optSources.checked,
         optAnimation: elements.optAnimation.checked,
         animSeconds: Number(elements.animSeconds.value) || 0,
-        clientName: elements.clientName.value,
-        tvaRate: Number(elements.tvaRate.value) || 0,
-        rate: Number(elements.rate.value) || CONFIG.eur_mga_rate
+        clientName: elements.clientName.value
       };
     }
 
@@ -2203,7 +2187,8 @@
       const totalBrut = subTotal + options + revisions + fees;
       const totalFinal = Math.max(CONFIG.minimum, totalBrut);
       const minimumApplied = totalBrut < CONFIG.minimum;
-      const tvaRate = elements.toggleTva.checked ? Number(elements.tvaRate.value) || 0 : 0;
+      const vatEnabled = CONFIG.vat_enabled ?? false;
+      const tvaRate = vatEnabled ? Number(CONFIG.vat_rate) || 0 : 0;
       const tvaAmount = totalFinal * (tvaRate / 100);
       const totalTtc = totalFinal + tvaAmount;
 
@@ -2233,7 +2218,7 @@
     }
 
     function render(data) {
-      const showTva = elements.toggleTva.checked;
+      const showTva = CONFIG.vat_enabled ?? false;
       const totalHT = data.totalFinal;
       const totalTTC = data.totalTtc;
       const grandTotal = showTva ? totalTTC : totalHT;
@@ -2579,9 +2564,13 @@
         inputField("Taux cycle", "revisions.rate"),
         inputField("Déplacement forfait", "travel.flat"),
         inputField("Prix km", "travel.km"),
-        inputField("Minimum facturé", "minimum"),
-        inputField("TVA défaut", "vat_rate"),
-        inputField("Taux EUR-MGA", "eur_mga_rate")
+        inputField("Minimum facturé", "minimum")
+      ]);
+
+      addGroup("TVA & conversion", [
+        inputField("Ajouter TVA", "vat_enabled", "checkbox"),
+        inputField("TVA (%)", "vat_rate"),
+        inputField("Taux EUR → MGA", "eur_mga_rate")
       ]);
 
       addGroup("Toggles", [
@@ -2683,7 +2672,7 @@
         try {
           const data = JSON.parse(event.target.result);
           if (!data.base || !data.packs) throw new Error("JSON invalide");
-          CONFIG = data;
+          CONFIG = ensureConfigDefaults(data);
           saveConfig();
           buildSettingsForm();
           calculateAndRender();
@@ -2700,7 +2689,17 @@
         try {
           const data = JSON.parse(event.target.result);
           if (!data.parameters || !data.inputs) throw new Error("JSON invalide");
-          CONFIG = data.parameters;
+          const snapshotParameters = { ...(data.parameters || {}) };
+          if (snapshotParameters.vat_enabled === undefined && data.inputs?.ui?.showTva !== undefined) {
+            snapshotParameters.vat_enabled = data.inputs.ui.showTva;
+          }
+          if (snapshotParameters.vat_rate === undefined && data.inputs?.ui?.form?.tvaRate !== undefined) {
+            snapshotParameters.vat_rate = data.inputs.ui.form.tvaRate;
+          }
+          if (snapshotParameters.eur_mga_rate === undefined && data.inputs?.ui?.form?.rate !== undefined) {
+            snapshotParameters.eur_mga_rate = data.inputs.ui.form.rate;
+          }
+          CONFIG = ensureConfigDefaults(snapshotParameters);
           UI_STATE = { ...UI_DEFAULT, ...(data.inputs.ui || {}) };
           BILLING = {
             ...structuredClone(BILLING_DEFAULT),
@@ -2732,7 +2731,7 @@
     }
 
     function buildInvoiceLines(data, showDetails) {
-      const showTva = elements.toggleTva.checked;
+      const showTva = CONFIG.vat_enabled ?? false;
       if (!showDetails) {
         const totalBase = data.totalFinal;
         const lines = [{ label: "Prestation", amount: totalBase }];
@@ -2755,7 +2754,7 @@
     function buildInvoiceMarkup(data) {
       ensureInvoiceDefaults();
       const showDetails = BILLING.invoice.show_details ?? true;
-      const showTva = elements.toggleTva.checked;
+      const showTva = CONFIG.vat_enabled ?? false;
       const lines = buildInvoiceLines(data, showDetails);
       const totalLabel = showTva ? "Total TTC" : "Total HT";
       const totalValue = showTva ? data.totalTtc : data.totalFinal;
@@ -2944,7 +2943,6 @@
 
     function init() {
       setCurrency(UI_STATE.currency);
-      elements.toggleTva.checked = UI_STATE.showTva;
       const hasStoredUi = Boolean(localStorage.getItem("tk_quote_calc_ui_v1"));
       const deliverablesMedia = window.matchMedia("(max-width: 980px)");
       if (!hasStoredUi && deliverablesMedia.matches) {
@@ -2968,11 +2966,9 @@
 
       document.querySelectorAll("input, select").forEach(input => {
         input.addEventListener("input", () => {
-          UI_STATE.showTva = elements.toggleTva.checked;
           debouncedCalculateAndRender();
         });
         input.addEventListener("change", () => {
-          UI_STATE.showTva = elements.toggleTva.checked;
           debouncedCalculateAndRender();
         });
       });
