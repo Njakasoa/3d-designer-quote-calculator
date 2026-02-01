@@ -907,11 +907,6 @@
       border-radius: 999px;
     }
 
-    .client-only { display: none; }
-    .advanced-only { display: none; }
-
-    body.mode-client .client-only { display: block; }
-    body.mode-advanced .advanced-only { display: block; }
 
     @media (max-width: 980px) {
       .content {
@@ -945,7 +940,7 @@
     }
   </style>
 </head>
-<body class="mode-client">
+<body>
   <div class="app">
     <header>
       <div>
@@ -953,11 +948,7 @@
         <p class="subtle">Visuels 3D · Design intérieur · Design extérieur</p>
       </div>
       <div class="inline">
-        <div class="toggle-group" role="tablist" aria-label="Mode">
-          <button class="toggle-btn active" id="mode-client" role="tab" aria-selected="true">Client</button>
-          <button class="toggle-btn" id="mode-advanced" role="tab" aria-selected="false">Avancé</button>
-        </div>
-        <button class="btn advanced-only" id="open-settings" type="button">⚙ Paramètres</button>
+        <button class="btn" id="open-settings" type="button">⚙ Paramètres</button>
       </div>
     </header>
 
@@ -999,14 +990,6 @@
               <input id="nb-visuels" type="number" min="0" value="0" />
               <button type="button" data-step="1" data-target="nb-visuels">+</button>
             </div>
-          </div>
-          <div class="client-only">
-            <label for="client-level">Niveau (mode client)</label>
-            <select id="client-level">
-              <option value="standard">Standard</option>
-              <option value="premium">Premium</option>
-            </select>
-            <p class="helper">Estimation claire, sans jargon.</p>
           </div>
         </div>
         <div class="grid" id="volume-interior">
@@ -1103,7 +1086,7 @@
 
       <section class="glass panel" aria-label="Paramètres créatifs">
         <h2>Niveau de prestation</h2>
-        <div class="grid advanced-only">
+        <div class="grid">
           <div>
             <label for="complexity">Complexité</label>
             <select id="complexity">
@@ -1137,9 +1120,6 @@
             </select>
           </div>
         </div>
-        <div class="client-only">
-          <p class="helper">Estimation indicative — devis final après validation du brief.</p>
-        </div>
       </section>
 
       <section class="glass panel" aria-label="Options">
@@ -1148,11 +1128,11 @@
           <label class="checkbox"><input type="checkbox" id="opt-moodboard" /> Moodboard</label>
           <label class="checkbox"><input type="checkbox" id="opt-plan" /> Plan 2D</label>
           <label class="checkbox"><input type="checkbox" id="opt-shopping" /> Shopping list</label>
-          <label class="checkbox advanced-only"><input type="checkbox" id="opt-modeling" /> Modélisation sur mesure</label>
-          <label class="checkbox advanced-only"><input type="checkbox" id="opt-furniture" /> Mobilier / déco</label>
-          <label class="checkbox advanced-only"><input type="checkbox" id="opt-landscape" /> Paysage / végétation</label>
+          <label class="checkbox"><input type="checkbox" id="opt-modeling" /> Modélisation sur mesure</label>
+          <label class="checkbox"><input type="checkbox" id="opt-furniture" /> Mobilier / déco</label>
+          <label class="checkbox"><input type="checkbox" id="opt-landscape" /> Paysage / végétation</label>
           <label class="checkbox"><input type="checkbox" id="opt-4k" /> Rendu 4K</label>
-          <label class="checkbox advanced-only"><input type="checkbox" id="opt-sources" /> Fichiers sources</label>
+          <label class="checkbox"><input type="checkbox" id="opt-sources" /> Fichiers sources</label>
         </div>
         <div class="grid">
           <div>
@@ -1231,16 +1211,7 @@
           </div>
           <div class="alert" id="empty-warning">Ajoute au moins 1 pièce, 1 scène ou 1 visuel.</div>
           <div class="pill" id="minimum-pill" style="display:none;">Minimum appliqué</div>
-          <div class="summary-list client-only" id="summary-client">
-            <div class="summary-item"><span>Service</span><span id="sum-service"></span></div>
-            <div class="summary-item"><span>Pack</span><span id="sum-pack"></span></div>
-            <div class="summary-item"><span>Pièces/scènes</span><span id="sum-volumes"></span></div>
-            <div class="summary-item"><span>Visuels</span><span id="sum-visuels"></span></div>
-            <div class="summary-item"><span>Délais</span><span id="sum-delay"></span></div>
-            <div class="summary-item"><span>Cycles inclus</span><span id="sum-cycles"></span></div>
-            <div class="summary-item sub" id="sum-note">Estimation indicative — devis final après validation du brief.</div>
-          </div>
-          <div class="summary-list advanced-only" id="summary-advanced"></div>
+          <div class="summary-list" id="summary-advanced"></div>
           <div class="deliverables" id="deliverables">
             <div class="deliverables-header">
               <h3>Livrables inclus</h3>
@@ -1480,11 +1451,7 @@
         { upTo: 30, unit: 18000 },
         { upTo: 80, unit: 14000 },
         { upTo: Infinity, unit: 11000 }
-      ],
-      client_mapping: {
-        standard: { complexity: "standard", details: "realistic", usage: "commercial", delay: "standard" },
-        premium: { complexity: "standard", details: "photoreal", usage: "commercial", delay: "standard" }
-      }
+      ]
     };
 
     const LIVRABLES = {
@@ -1605,7 +1572,6 @@
     };
 
     const UI_DEFAULT = {
-      mode: "client",
       currency: "MGA",
       showTva: false,
       deliverablesExpanded: true
@@ -1645,8 +1611,6 @@
     let BILLING = loadBilling();
 
     const elements = {
-      modeClient: document.getElementById("mode-client"),
-      modeAdvanced: document.getElementById("mode-advanced"),
       service: document.getElementById("service"),
       pack: document.getElementById("pack"),
       nbVisuels: document.getElementById("nb-visuels"),
@@ -1659,7 +1623,6 @@
       scenesSmall: document.getElementById("scenes-small"),
       scenesMedium: document.getElementById("scenes-medium"),
       scenesLarge: document.getElementById("scenes-large"),
-      clientLevel: document.getElementById("client-level"),
       complexity: document.getElementById("complexity"),
       details: document.getElementById("details"),
       usage: document.getElementById("usage"),
@@ -1685,7 +1648,6 @@
       clientName: document.getElementById("client-name"),
       currencyMga: document.getElementById("currency-mga"),
       currencyEur: document.getElementById("currency-eur"),
-      summaryClient: document.getElementById("summary-client"),
       summaryAdvanced: document.getElementById("summary-advanced"),
       deliverables: document.getElementById("deliverables"),
       deliverablesBody: document.getElementById("deliverables-body"),
@@ -1694,12 +1656,6 @@
       totalMain: document.getElementById("total-main"),
       totalAlt: document.getElementById("total-alt"),
       totalLabel: document.getElementById("total-label"),
-      sumService: document.getElementById("sum-service"),
-      sumPack: document.getElementById("sum-pack"),
-      sumVolumes: document.getElementById("sum-volumes"),
-      sumVisuels: document.getElementById("sum-visuels"),
-      sumDelay: document.getElementById("sum-delay"),
-      sumCycles: document.getElementById("sum-cycles"),
       cyclesIncluded: document.getElementById("cycles-included"),
       minimumPill: document.getElementById("minimum-pill"),
       emptyWarning: document.getElementById("empty-warning"),
@@ -1945,7 +1901,6 @@
       elements.scenesSmall.value = form.scenesSmall ?? 0;
       elements.scenesMedium.value = form.scenesMedium ?? 0;
       elements.scenesLarge.value = form.scenesLarge ?? 0;
-      elements.clientLevel.value = form.clientLevel || "standard";
       elements.complexity.value = form.complexity || "standard";
       elements.details.value = form.details || "realistic";
       elements.usage.value = form.usage || "commercial";
@@ -1984,7 +1939,6 @@
         scenesSmall: Number(elements.scenesSmall.value) || 0,
         scenesMedium: Number(elements.scenesMedium.value) || 0,
         scenesLarge: Number(elements.scenesLarge.value) || 0,
-        clientLevel: elements.clientLevel.value,
         complexity: elements.complexity.value,
         details: elements.details.value,
         usage: elements.usage.value,
@@ -2129,15 +2083,6 @@
     }
 
     function getSelectedMultipliers(service) {
-      if (UI_STATE.mode === "client") {
-        const mapping = CONFIG.client_mapping[elements.clientLevel.value] || CONFIG.client_mapping.standard;
-        return {
-          complexity: mapping.complexity,
-          details: mapping.details,
-          usage: mapping.usage,
-          delay: mapping.delay
-        };
-      }
       return {
         complexity: elements.complexity.value,
         details: elements.details.value,
@@ -2291,27 +2236,12 @@
       elements.totalAlt.textContent = formatAltCurrency(grandTotal);
       elements.totalLabel.textContent = showTva ? "Total TTC" : "Total HT";
 
-      elements.sumService.textContent = serviceLabelMap[data.service] || data.service;
-      elements.sumPack.textContent =
-        data.service === "visual" ? "—" : packLabelMap[data.pack] || data.pack;
       const totalPieces =
         data.service === "visual"
           ? data.volumes.scenes.small + data.volumes.scenes.medium + data.volumes.scenes.large
           : data.service === "interior"
           ? data.volumes.pieces.small + data.volumes.pieces.medium + data.volumes.pieces.large
           : data.volumes.zones.small + data.volumes.zones.medium + data.volumes.zones.large;
-      elements.sumVolumes.textContent = data.m2Enabled ? `${data.m2Value} m²` : totalPieces;
-      elements.sumVisuels.textContent = data.nbVisuels;
-      const delayLabelMap = {
-        standard: "Standard",
-        express: "Express",
-        urgent: "Urgent"
-      };
-      elements.sumDelay.textContent = delayLabelMap[data.multipliersSelected.delay] || "Standard";
-      const cyclesIncluded = CONFIG.revisions.included;
-      const cyclesAsked = Math.max(1, Number(elements.cycles.value) || 1);
-      const cyclesExtra = Math.max(0, cyclesAsked - cyclesIncluded);
-      elements.sumCycles.textContent = cyclesExtra > 0 ? `${cyclesIncluded} (+${cyclesExtra})` : `${cyclesIncluded}`;
       elements.minimumPill.style.display = data.minimumApplied ? "inline-flex" : "none";
       const isEmpty = totalPieces === 0 && data.nbVisuels === 0 && (!data.m2Enabled || data.m2Value === 0);
       elements.emptyWarning.style.display = isEmpty ? "block" : "none";
@@ -2354,8 +2284,7 @@
     }
 
     function renderDeliverables(data) {
-      const isClient = UI_STATE.mode === "client";
-      const modeKey = isClient ? "client" : "advanced";
+      const modeKey = "advanced";
       const packKey = data.service === "visual" ? getVisualTier(data.multipliersSelected.details) : data.pack;
       const baseItems = LIVRABLES[data.service]?.[packKey]?.[modeKey] || [];
       const totalScenes = data.volumes.scenes.small + data.volumes.scenes.medium + data.volumes.scenes.large;
@@ -2375,27 +2304,25 @@
 
       const optionItems = [];
       if (elements.optMoodboard.checked) {
-        optionItems.push(isClient ? "Moodboard inspirant" : "Moodboard détaillé (PDF)");
+        optionItems.push("Moodboard détaillé (PDF)");
       }
       if (elements.optPlan.checked) {
-        optionItems.push(isClient ? "Plan 2D clair et lisible" : "Plan 2D (PDF + DWG)");
+        optionItems.push("Plan 2D (PDF + DWG)");
       }
       if (elements.optShopping.checked) {
-        optionItems.push(isClient ? "Liste shopping & budget indicatif" : "Shopping list détaillée (liens & références)");
+        optionItems.push("Shopping list détaillée (liens & références)");
       }
       if (elements.optModeling.checked) {
-        optionItems.push(isClient ? "Modélisation sur mesure" : "Modélisation sur mesure (assets dédiés)");
+        optionItems.push("Modélisation sur mesure (assets dédiés)");
       }
       if (elements.optFurniture.checked) {
-        optionItems.push(isClient ? "Sélection mobilier & déco" : "Sélection mobilier/déco (références produit)");
+        optionItems.push("Sélection mobilier/déco (références produit)");
       }
       if (elements.optLandscape.checked) {
-        optionItems.push(isClient ? "Paysage & végétation" : "Plan paysager & végétation (species)");
+        optionItems.push("Plan paysager & végétation (species)");
       }
       if (elements.optSources.checked) {
-        const sourcesText = isClient
-          ? "Fichiers sources livrés (sur demande)"
-          : "Fichiers sources (.blend/.max/.skp selon pipeline)";
+        const sourcesText = "Fichiers sources (.blend/.max/.skp selon pipeline)";
         optionItems.push(`${sourcesText}<span class="deliverables-note">Support & modifications non inclus.</span>`);
       }
 
@@ -2403,24 +2330,18 @@
       if (data.service === "visual") {
         if (totalScenes > 0) {
           volumeItems.push(
-            isClient
-              ? `Scènes : ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large} (total ${totalScenes})`
-              : `Scènes S/M/L : ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large} (total ${totalScenes})`
+            `Scènes S/M/L : ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large} (total ${totalScenes})`
           );
         }
-        volumeItems.push(isClient ? "Angles de vues proposés" : "Plan de caméras + focales");
+        volumeItems.push("Plan de caméras + focales");
       } else if (data.m2Enabled && data.m2Value > 0) {
         volumeItems.push(
-          isClient
-            ? `Zoning & proposition d'aménagement sur ${data.m2Value} m²`
-            : `Zoning & plans d'aménagement sur ${data.m2Value} m² (PDF)`
+          `Zoning & plans d'aménagement sur ${data.m2Value} m² (PDF)`
         );
       } else if (totalPieces > 0) {
         const label = data.service === "interior" ? "pièce" : "zone";
         volumeItems.push(
-          isClient
-            ? `${totalPieces} ${label}${totalPieces > 1 ? "s" : ""} prises en charge`
-            : `${totalPieces} ${label}${totalPieces > 1 ? "s" : ""} (S/M/L)`
+          `${totalPieces} ${label}${totalPieces > 1 ? "s" : ""} (S/M/L)`
         );
       }
 
@@ -2433,22 +2354,16 @@
         const seconds = clamp(Number(elements.animSeconds.value) || 0, 0, 120);
         const resolution = getResolution(packKey, elements.opt4k.checked);
         volumeItems.push(
-          isClient
-            ? `Animation ${seconds}s (MP4, ${resolution})`
-            : `Animation ${seconds}s (MP4/H.264, ${resolution}, 25fps)`
+          `Animation ${seconds}s (MP4/H.264, ${resolution}, 25fps)`
         );
       }
 
-      const cycleText = isClient
-        ? `Retours : ${CONFIG.revisions.included} inclus, les suivants sont facturés.`
-        : `Retours : ${CONFIG.revisions.included} cycles inclus, cycles supplémentaires facturés à ${CONFIG.revisions.rate}%.`;
+      const cycleText = `Retours : ${CONFIG.revisions.included} cycles inclus, cycles supplémentaires facturés à ${CONFIG.revisions.rate}%.`;
       const planningItems = [cycleText];
       if (data.multipliersSelected.delay !== "standard") {
         const delayLabel = data.multipliersSelected.delay === "express" ? "Express" : "Urgent";
         planningItems.push(
-          isClient
-            ? `Planning prioritaire (${delayLabel}) — validation rapide requise.`
-            : `Planning prioritaire (${delayLabel}) — jalons validés en 24/48h.`
+          `Planning prioritaire (${delayLabel}) — jalons validés en 24/48h.`
         );
       }
 
@@ -2544,16 +2459,6 @@
         });
       });
 
-    }
-
-    function setMode(mode) {
-      UI_STATE.mode = mode;
-      document.body.className = `mode-${mode}`;
-      elements.modeClient.classList.toggle("active", mode === "client");
-      elements.modeAdvanced.classList.toggle("active", mode === "advanced");
-      elements.modeClient.setAttribute("aria-selected", mode === "client" ? "true" : "false");
-      elements.modeAdvanced.setAttribute("aria-selected", mode === "advanced" ? "true" : "false");
-      calculateAndRender();
     }
 
     function setCurrency(currency) {
@@ -2678,17 +2583,6 @@
         inputField("Tiers visuels", "toggles.enable_visual_tiers", "checkbox"),
         inputField("Tiers rendus", "toggles.enable_render_tiers", "checkbox"),
         inputField("Tiers m²", "toggles.enable_tiered_m2", "checkbox")
-      ]);
-
-      addGroup("Mapping mode client", [
-        inputField("Standard → complexité", "client_mapping.standard.complexity", "text"),
-        inputField("Standard → détails", "client_mapping.standard.details", "text"),
-        inputField("Standard → usage", "client_mapping.standard.usage", "text"),
-        inputField("Standard → délai", "client_mapping.standard.delay", "text"),
-        inputField("Premium → complexité", "client_mapping.premium.complexity", "text"),
-        inputField("Premium → détails", "client_mapping.premium.details", "text"),
-        inputField("Premium → usage", "client_mapping.premium.usage", "text"),
-        inputField("Premium → délai", "client_mapping.premium.delay", "text")
       ]);
 
       elements.settingsForm.innerHTML = form.join("");
@@ -2996,7 +2890,6 @@
     function generateQuoteText(data) {
       const date = new Date().toLocaleDateString("fr-FR");
       const client = elements.clientName.value || "Client";
-      const isClient = UI_STATE.mode === "client";
       const total = elements.toggleTva.checked ? data.totalTtc : data.totalFinal;
       const rate = Number(elements.rate.value) || CONFIG.eur_mga_rate;
       const totalEur = (total / rate).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3018,15 +2911,12 @@
       }
       text += `Délai: ${data.multipliersSelected.delay}\n`;
       text += `Cycles inclus: ${CONFIG.revisions.included}\n`;
-
-      if (!isClient) {
-        text += `Multiplicateur total: x${data.multiplierTotal.toFixed(2)}\n`;
-        text += `Base: ${Math.round(data.base)} Ar\n`;
-        text += `Production: ${Math.round(data.production)} Ar\n`;
-        text += `Options: ${Math.round(data.options)} Ar\n`;
-        text += `Retours: ${Math.round(data.revisions)} Ar\n`;
-        text += `Frais: ${Math.round(data.fees)} Ar\n`;
-      }
+      text += `Multiplicateur total: x${data.multiplierTotal.toFixed(2)}\n`;
+      text += `Base: ${Math.round(data.base)} Ar\n`;
+      text += `Production: ${Math.round(data.production)} Ar\n`;
+      text += `Options: ${Math.round(data.options)} Ar\n`;
+      text += `Retours: ${Math.round(data.revisions)} Ar\n`;
+      text += `Frais: ${Math.round(data.fees)} Ar\n`;
 
       text += `Total ${elements.toggleTva.checked ? "TTC" : "HT"}: ${Math.round(total)} Ar\n`;
       text += `≈ ${totalEur} € (taux ${rate} Ar)\n`;
@@ -3051,7 +2941,6 @@
     }
 
     function init() {
-      setMode(UI_STATE.mode);
       setCurrency(UI_STATE.currency);
       elements.toggleTva.checked = UI_STATE.showTva;
       const hasStoredUi = Boolean(localStorage.getItem("tk_quote_calc_ui_v1"));
@@ -3086,8 +2975,6 @@
         });
       });
 
-      elements.modeClient.addEventListener("click", () => setMode("client"));
-      elements.modeAdvanced.addEventListener("click", () => setMode("advanced"));
       elements.currencyMga.addEventListener("click", () => setCurrency("MGA"));
       elements.currencyEur.addEventListener("click", () => setCurrency("EUR"));
       elements.openSettings.addEventListener("click", openSettings);
