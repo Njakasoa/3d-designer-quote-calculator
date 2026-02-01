@@ -2485,6 +2485,15 @@
       return `≈ ${Math.round(safeValue).toLocaleString("fr-FR")} Ar`;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function getPackResolution(packKey) {
       const map = { concept: "HD", standard: "2K", premium: "4K" };
       return map[packKey] || "2K";
@@ -2724,8 +2733,8 @@
         const row = document.createElement("div");
         row.className = "custom-field-row";
         row.innerHTML = `
-          <input type="text" placeholder="Libellé" value="${field.label || ""}" />
-          <input type="text" placeholder="Valeur" value="${field.value || ""}" />
+          <input type="text" placeholder="Libellé" value="${escapeHtml(field.label || "")}" />
+          <input type="text" placeholder="Valeur" value="${escapeHtml(field.value || "")}" />
           <button class="btn" type="button">Supprimer</button>
         `;
         const [labelInput, valueInput, deleteButton] = row.querySelectorAll("input, button");
@@ -3043,7 +3052,7 @@
         .map(
           module => `
             <div class="summary-item">
-              <span>${module.name || MODULE_LABELS[module.type]}</span>
+              <span>${escapeHtml(module.name || MODULE_LABELS[module.type])}</span>
               <span class="price-label">${formatCurrency(module.total)}</span>
             </div>
           `
@@ -3053,7 +3062,7 @@
       const detailLines = [];
       project.modules.forEach(module => {
         detailLines.push(
-          `<div class="summary-item"><strong>${module.name || MODULE_LABELS[module.type]}</strong><span class="price-label">${formatCurrency(
+          `<div class="summary-item"><strong>${escapeHtml(module.name || MODULE_LABELS[module.type])}</strong><span class="price-label">${formatCurrency(
             module.total
           )}</span></div>`
         );
@@ -3119,7 +3128,7 @@
       elements.deliverablesBody.innerHTML = `
         <div class="deliverables-section">
           <h4>Vue d'ensemble</h4>
-          <ul>${summaryItems.map(item => `<li>${item}</li>`).join("")}</ul>
+          <ul>${summaryItems.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </div>
       `;
 
@@ -3128,7 +3137,7 @@
       elements.deliverablesBadges.innerHTML = badges
         .map(
           badge =>
-            `<span class="deliverables-badge${badge.type === "warn" ? " deliverables-badge--warn" : ""}">${badge.label}</span>`
+            `<span class="deliverables-badge${badge.type === "warn" ? " deliverables-badge--warn" : ""}">${escapeHtml(badge.label)}</span>`
         )
         .join("");
     }
@@ -3205,8 +3214,8 @@
         .map(
           section => `
           <div class="deliverables-section">
-            <h4>${section.title}</h4>
-            <ul>${section.items.map(item => `<li>${item}</li>`).join("")}</ul>
+            <h4>${escapeHtml(section.title)}</h4>
+            <ul>${section.items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
           </div>
         `
         )
@@ -3272,7 +3281,7 @@
           <div class="module-typology-header">
             <div class="module-typology-title">
               <span class="module-typology-tag">Typologie</span>
-              <input type="text" placeholder="Nom de la typologie" value="${typology.name || ""}" />
+              <input type="text" placeholder="Nom de la typologie" value="${escapeHtml(typology.name || "")}" />
             </div>
             <button class="btn" type="button">Supprimer</button>
           </div>
@@ -3280,7 +3289,7 @@
             <div class="module-typology-field">
               <label>Catégorie</label>
               <select>
-                ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}
+                ${categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join("")}
               </select>
             </div>
             <div class="module-typology-field">
@@ -3293,7 +3302,7 @@
             </div>
             <div class="module-typology-field">
               <label>Quantité</label>
-              <input type="number" min="0" value="${typology.instances ?? 0}" />
+              <input type="number" min="0" value="${escapeHtml(typology.instances ?? 0)}" />
             </div>
             <div class="module-typology-field module-typology-variations">
               <label class="checkbox">
@@ -3305,7 +3314,7 @@
                   <option value="percent">%</option>
                   <option value="fixed">Fixe</option>
                 </select>
-                <input type="number" min="0" value="${typology.variationValue ?? CONFIG.typologies.variation_value}" />
+                <input type="number" min="0" value="${escapeHtml(typology.variationValue ?? CONFIG.typologies.variation_value)}" />
               </div>
               <small>Applique une variation sur la typologie sélectionnée.</small>
             </div>
@@ -4250,7 +4259,7 @@
         BILLING.issuer.company_phone,
         BILLING.issuer.company_nif,
         BILLING.issuer.company_email
-      ].filter(Boolean);
+      ].filter(Boolean).map(escapeHtml);
       const clientLines = [
         BILLING.client.client_name,
         BILLING.client.client_address,
@@ -4259,17 +4268,20 @@
         BILLING.client.client_phone,
         BILLING.client.client_nif,
         BILLING.client.client_email
-      ].filter(Boolean);
+      ].filter(Boolean).map(escapeHtml);
 
       const customFields = BILLING.customFields
         .filter(field => field.label || field.value)
         .map(
           field =>
-            `<div class="invoice-card"><h4>${field.label || "Champ"}</h4><div>${field.value || "—"}</div></div>`
+            `<div class="invoice-card"><h4>${escapeHtml(field.label || "Champ")}</h4><div>${escapeHtml(field.value || "—")}</div></div>`
         )
         .join("");
 
       const isDraft = !BILLING.invoice.invoice_number;
+      const safeInvoiceNumber = escapeHtml(BILLING.invoice.invoice_number || "");
+      const safeInvoiceDate = escapeHtml(formatInvoiceDate(BILLING.invoice.invoice_date));
+      const safeDueDate = escapeHtml(formatInvoiceDate(BILLING.invoice.due_date));
 
       return `
         <div class="invoice">
@@ -4289,15 +4301,15 @@
               <div class="invoice-meta-grid">
                 <div class="invoice-meta-item">
                   <strong>Numéro</strong>
-                  ${BILLING.invoice.invoice_number || "—"}
+                  ${safeInvoiceNumber || "—"}
                 </div>
                 <div class="invoice-meta-item">
                   <strong>Date</strong>
-                  ${formatInvoiceDate(BILLING.invoice.invoice_date)}
+                  ${safeInvoiceDate}
                 </div>
                 <div class="invoice-meta-item">
                   <strong>Échéance</strong>
-                  ${formatInvoiceDate(BILLING.invoice.due_date)}
+                  ${safeDueDate}
                 </div>
               </div>
             </div>
@@ -4329,7 +4341,7 @@
                 .map(line => {
                   const amount =
                     line.amount === null || line.amount === undefined ? "—" : formatCurrency(line.amount);
-                  return `<tr><td>${line.label}</td><td>${amount}</td></tr>`;
+                  return `<tr><td>${escapeHtml(line.label)}</td><td>${amount}</td></tr>`;
                 })
                 .join("")}
               <tr class="invoice-total">
@@ -4339,7 +4351,7 @@
             </tbody>
           </table>
           <div class="invoice-footer">
-            ${BILLING.invoice.notes ? `<div class="invoice-note">${BILLING.invoice.notes}</div>` : ""}
+            ${BILLING.invoice.notes ? `<div class="invoice-note">${escapeHtml(BILLING.invoice.notes)}</div>` : ""}
             ${customFields ? `<div class="invoice-card-grid">${customFields}</div>` : ""}
           </div>
         </div>
@@ -4347,13 +4359,14 @@
     }
 
     function buildInvoiceDocument(markup) {
+      const invoiceTitle = escapeHtml(BILLING.invoice.invoice_number || "");
       return `
         <!DOCTYPE html>
         <html lang="fr">
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>Facture ${BILLING.invoice.invoice_number || ""}</title>
+            <title>Facture ${invoiceTitle}</title>
             <style>
               body { font-family: "Segoe UI", "Inter", sans-serif; margin: 32px; color: #0f172a; background: #f8fafc; }
               .invoice { display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 0; background: rgba(255, 255, 255, 0.92); border: 1px solid #e2e8f0; box-shadow: 0 16px 28px rgba(15, 23, 42, 0.08); }
@@ -4430,7 +4443,7 @@
 
     function buildPresetSelect() {
       elements.presetSelect.innerHTML = CONFIG.presets
-        .map((preset, index) => `<option value="${index}">${preset.name}</option>`)
+        .map((preset, index) => `<option value="${index}">${escapeHtml(preset.name)}</option>`)
         .join("");
     }
 
