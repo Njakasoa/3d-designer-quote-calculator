@@ -556,6 +556,7 @@
       display: flex;
       justify-content: space-between;
       gap: 12px;
+      max-width: 100%;
     }
 
     .summary-item.sub {
@@ -572,7 +573,12 @@
     }
 
     .summary-item span {
-          text-wrap-mode: nowrap;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-item .price-label {
+      text-wrap-mode: nowrap;
     }
 
     .summary-toggle {
@@ -1406,7 +1412,7 @@
             </div>
 
             <div class="module-summary">
-              <div class="summary-item"><span>Sous-total module</span><span class="module-subtotal">0 Ar</span></div>
+              <div class="summary-item"><span>Sous-total module</span><span class="module-subtotal price-label">0 Ar</span></div>
             </div>
           </div>
         </div>
@@ -3038,7 +3044,7 @@
           module => `
             <div class="summary-item">
               <span>${module.name || MODULE_LABELS[module.type]}</span>
-              <span>${formatCurrency(module.total)}</span>
+              <span class="price-label">${formatCurrency(module.total)}</span>
             </div>
           `
         )
@@ -3047,37 +3053,37 @@
       const detailLines = [];
       project.modules.forEach(module => {
         detailLines.push(
-          `<div class="summary-item"><strong>${module.name || MODULE_LABELS[module.type]}</strong><span>${formatCurrency(
+          `<div class="summary-item"><strong>${module.name || MODULE_LABELS[module.type]}</strong><span class="price-label">${formatCurrency(
             module.total
           )}</span></div>`
         );
-        detailLines.push(`<div class="summary-item sub"><span>Base</span><span>${formatCurrency(module.base)}</span></div>`);
+        detailLines.push(`<div class="summary-item sub"><span>Base</span><span class="price-label">${formatCurrency(module.base)}</span></div>`);
         detailLines.push(
-          `<div class="summary-item sub"><span>Production</span><span>${formatCurrency(module.production)}</span></div>`
+          `<div class="summary-item sub"><span>Production</span><span class="price-label">${formatCurrency(module.production)}</span></div>`
         );
         if (module.options) {
           detailLines.push(
-            `<div class="summary-item sub"><span>Options</span><span>${formatCurrency(module.options)}</span></div>`
+            `<div class="summary-item sub"><span>Options</span><span class="price-label">${formatCurrency(module.options)}</span></div>`
           );
         }
         if (module.revisions) {
           detailLines.push(
-            `<div class="summary-item sub"><span>Retours</span><span>${formatCurrency(module.revisions)}</span></div>`
+            `<div class="summary-item sub"><span>Retours</span><span class="price-label">${formatCurrency(module.revisions)}</span></div>`
           );
         }
       });
       if (project.minimumApplied) {
         detailLines.push(
-          `<div class="summary-item"><span>Minimum appliqué</span><span>${formatCurrency(CONFIG.minimum)}</span></div>`
+          `<div class="summary-item"><span>Minimum appliqué</span><span class="price-label">${formatCurrency(CONFIG.minimum)}</span></div>`
         );
       }
       if (showTva) {
         detailLines.push(
-          `<div class="summary-item"><span>TVA (${project.tvaRate}%)</span><span>${formatCurrency(project.tvaAmount)}</span></div>`
+          `<div class="summary-item"><span>TVA (${project.tvaRate}%)</span><span class="price-label">${formatCurrency(project.tvaAmount)}</span></div>`
         );
       }
       detailLines.push(
-        `<div class="summary-item total"><span>Total ${showTva ? "TTC" : "HT"}</span><span>${formatCurrency(
+        `<div class="summary-item total"><span>Total ${showTva ? "TTC" : "HT"}</span><span class="price-label">${formatCurrency(
           grandTotal
         )}</span></div>`
       );
