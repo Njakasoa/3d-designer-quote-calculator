@@ -1892,6 +1892,7 @@
 
     function applyUIState() {
       const form = UI_STATE.form || {};
+      elements.toggleTva.checked = UI_STATE.showTva ?? false;
       elements.service.value = form.service || "visual";
       elements.pack.value = form.pack || "standard";
       elements.nbVisuels.value = form.nbVisuels ?? 0;
@@ -1929,6 +1930,7 @@
     }
 
     function syncStateFromInputs() {
+      UI_STATE.showTva = elements.toggleTva.checked;
       UI_STATE.form = {
         service: elements.service.value,
         pack: elements.pack.value,
