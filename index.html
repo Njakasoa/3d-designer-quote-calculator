@@ -1185,8 +1185,11 @@
       <section class="glass panel" aria-label="Export">
         <h2>Export devis</h2>
         <div class="inline">
-          <button class="btn btn-primary" id="copy-quote" type="button">Copier le devis</button>
-          <button class="btn" id="download-quote" type="button">Télécharger .txt</button>
+          <button class="btn btn-primary" id="export-snapshot" type="button">Exporter le devis</button>
+          <label class="btn" style="cursor:pointer;">
+            Importer un devis
+            <input type="file" id="import-snapshot" accept="application/json" style="display:none;" />
+          </label>
           <button class="btn" id="open-billing" type="button">Générer une facture</button>
         </div>
       </section>
@@ -1672,8 +1675,8 @@
       resetConfig: document.getElementById("reset-config"),
       exportConfig: document.getElementById("export-config"),
       importConfig: document.getElementById("import-config"),
-      copyQuote: document.getElementById("copy-quote"),
-      downloadQuote: document.getElementById("download-quote"),
+      exportSnapshot: document.getElementById("export-snapshot"),
+      importSnapshot: document.getElementById("import-snapshot"),
       openBilling: document.getElementById("open-billing"),
       billingOverlay: document.getElementById("billing-overlay"),
       copyInvoice: document.getElementById("copy-invoice"),
@@ -2653,6 +2656,25 @@
       link.click();
     }
 
+    function exportSnapshot() {
+      syncStateFromInputs();
+      syncBillingFromForm();
+      const payload = {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        parameters: structuredClone(CONFIG),
+        inputs: {
+          ui: structuredClone(UI_STATE),
+          billing: structuredClone(BILLING)
+        }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "devis_parametres_champs.json";
+      link.click();
+    }
+
     function importConfig(file) {
       const reader = new FileReader();
       reader.onload = event => {
@@ -2662,6 +2684,37 @@
           CONFIG = data;
           saveConfig();
           buildSettingsForm();
+          calculateAndRender();
+        } catch (error) {
+          showToast("Fichier JSON invalide.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importSnapshot(file) {
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (!data.parameters || !data.inputs) throw new Error("JSON invalide");
+          CONFIG = data.parameters;
+          UI_STATE = { ...UI_DEFAULT, ...(data.inputs.ui || {}) };
+          BILLING = {
+            ...structuredClone(BILLING_DEFAULT),
+            ...(data.inputs.billing || {}),
+            issuer: { ...BILLING_DEFAULT.issuer, ...(data.inputs.billing?.issuer || {}) },
+            client: { ...BILLING_DEFAULT.client, ...(data.inputs.billing?.client || {}) },
+            invoice: { ...BILLING_DEFAULT.invoice, ...(data.inputs.billing?.invoice || {}) },
+            customFields: Array.isArray(data.inputs.billing?.customFields) ? data.inputs.billing.customFields : []
+          };
+          saveConfig();
+          saveUIState();
+          saveBilling();
+          buildSettingsForm();
+          applyUIState();
+          applyBillingState();
+          updateInvoicePreview();
           calculateAndRender();
         } catch (error) {
           showToast("Fichier JSON invalide.");
@@ -2887,59 +2940,6 @@
       printWindow.print();
     }
 
-    function generateQuoteText(data) {
-      const date = new Date().toLocaleDateString("fr-FR");
-      const client = elements.clientName.value || "Client";
-      const total = elements.toggleTva.checked ? data.totalTtc : data.totalFinal;
-      const rate = Number(elements.rate.value) || CONFIG.eur_mga_rate;
-      const totalEur = (total / rate).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-      let text = `DEVIS ESTIMATIF - DESIGN 3D\n`;
-      text += `Date: ${date}\n`;
-      text += `Projet: ${client}\n`;
-      text += `Service: ${serviceLabelMap[data.service] || data.service}\n`;
-      text += `Pack: ${data.service === "visual" ? "-" : packLabelMap[data.pack] || data.pack}\n`;
-      text += `Visuels: ${data.nbVisuels}\n`;
-      if (data.service === "visual") {
-        text += `Scènes S/M/L: ${data.volumes.scenes.small}/${data.volumes.scenes.medium}/${data.volumes.scenes.large}\n`;
-      } else if (data.m2Enabled) {
-        text += `Surface: ${data.m2Value} m²\n`;
-      } else if (data.service === "interior") {
-        text += `Pièces S/M/L: ${data.volumes.pieces.small}/${data.volumes.pieces.medium}/${data.volumes.pieces.large}\n`;
-      } else {
-        text += `Zones S/M/L: ${data.volumes.zones.small}/${data.volumes.zones.medium}/${data.volumes.zones.large}\n`;
-      }
-      text += `Délai: ${data.multipliersSelected.delay}\n`;
-      text += `Cycles inclus: ${CONFIG.revisions.included}\n`;
-      text += `Multiplicateur total: x${data.multiplierTotal.toFixed(2)}\n`;
-      text += `Base: ${Math.round(data.base)} Ar\n`;
-      text += `Production: ${Math.round(data.production)} Ar\n`;
-      text += `Options: ${Math.round(data.options)} Ar\n`;
-      text += `Retours: ${Math.round(data.revisions)} Ar\n`;
-      text += `Frais: ${Math.round(data.fees)} Ar\n`;
-
-      text += `Total ${elements.toggleTva.checked ? "TTC" : "HT"}: ${Math.round(total)} Ar\n`;
-      text += `≈ ${totalEur} € (taux ${rate} Ar)\n`;
-      text += `Estimation indicative — devis final après validation du brief.\n`;
-      return text;
-    }
-
-    function copyQuote() {
-      const data = calculate();
-      const text = generateQuoteText(data);
-      navigator.clipboard.writeText(text).then(() => showToast("Devis copié."));
-    }
-
-    function downloadQuote() {
-      const data = calculate();
-      const text = generateQuoteText(data);
-      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `devis_${new Date().toISOString().slice(0, 10)}.txt`;
-      link.click();
-    }
-
     function init() {
       setCurrency(UI_STATE.currency);
       elements.toggleTva.checked = UI_STATE.showTva;
@@ -2990,8 +2990,10 @@
       elements.importConfig.addEventListener("change", event => {
         if (event.target.files[0]) importConfig(event.target.files[0]);
       });
-      elements.copyQuote.addEventListener("click", copyQuote);
-      elements.downloadQuote.addEventListener("click", downloadQuote);
+      elements.exportSnapshot.addEventListener("click", exportSnapshot);
+      elements.importSnapshot.addEventListener("change", event => {
+        if (event.target.files[0]) importSnapshot(event.target.files[0]);
+      });
       elements.copyInvoice.addEventListener("click", copyInvoice);
       elements.downloadInvoice.addEventListener("click", downloadInvoice);
       elements.printInvoice.addEventListener("click", printInvoice);
