@@ -1165,23 +1165,6 @@
         </div>
       </section>
 
-      <section class="glass panel" aria-label="TVA">
-        <h2>TVA & conversion</h2>
-        <div class="form-row">
-          <div class="form-item">
-            <label class="checkbox"><input type="checkbox" id="toggle-tva" /> Ajouter TVA</label>
-            <div class="inline">
-              <input id="tva-rate" type="number" min="0" value="0" />
-              <span class="helper">%</span>
-            </div>
-          </div>
-          <div class="form-item">
-            <label for="rate">Taux EUR → MGA</label>
-            <input id="rate" type="number" min="0" value="4800" />
-          </div>
-        </div>
-      </section>
-
       <section class="glass panel" aria-label="Export">
         <h2>Export devis</h2>
         <div class="inline">
@@ -1244,6 +1227,22 @@
           </label>
           <button class="btn" id="reset-config" type="button">Réinitialiser</button>
           <button class="btn btn-primary" id="save-config" type="button">Sauvegarder</button>
+        </div>
+      </div>
+      <div class="section-divider">
+        <h3>TVA & conversion</h3>
+        <div class="settings-grid">
+          <div>
+            <label class="checkbox"><input type="checkbox" id="toggle-tva" /> Ajouter TVA</label>
+            <div class="inline">
+              <input id="tva-rate" type="number" min="0" value="0" />
+              <span class="helper">%</span>
+            </div>
+          </div>
+          <div>
+            <label for="rate">Taux EUR → MGA</label>
+            <input id="rate" type="number" min="0" value="4800" />
+          </div>
         </div>
       </div>
       <div id="settings-form" class="section-divider"></div>
@@ -1576,8 +1575,12 @@
 
     const UI_DEFAULT = {
       currency: "MGA",
-      showTva: false,
-      deliverablesExpanded: true
+      deliverablesExpanded: true,
+      tax: {
+        enabled: false,
+        tvaRate: CONFIG_DEFAULT.vat_rate,
+        rate: CONFIG_DEFAULT.eur_mga_rate
+      }
     };
 
     const BILLING_DEFAULT = {
@@ -1735,16 +1738,34 @@
 
     function loadUIState() {
       const stored = localStorage.getItem("tk_quote_calc_ui_v1");
-      if (!stored) return { ...UI_DEFAULT };
+      if (!stored) return structuredClone(UI_DEFAULT);
       try {
-        return { ...UI_DEFAULT, ...JSON.parse(stored) };
+        return normalizeUIState(JSON.parse(stored));
       } catch (error) {
-        return { ...UI_DEFAULT };
+        return structuredClone(UI_DEFAULT);
       }
     }
 
     function saveUIState() {
       localStorage.setItem("tk_quote_calc_ui_v1", JSON.stringify(UI_STATE));
+    }
+
+    function normalizeUIState(state) {
+      const base = {
+        ...structuredClone(UI_DEFAULT),
+        ...(state || {})
+      };
+      const legacyForm = state?.form || {};
+      const tax = {
+        enabled: state?.tax?.enabled ?? state?.showTva ?? UI_DEFAULT.tax.enabled,
+        tvaRate: state?.tax?.tvaRate ?? legacyForm.tvaRate ?? UI_DEFAULT.tax.tvaRate,
+        rate: state?.tax?.rate ?? legacyForm.rate ?? UI_DEFAULT.tax.rate
+      };
+      const form = { ...(state?.form || {}) };
+      delete form.tvaRate;
+      delete form.rate;
+      const { showTva, ...rest } = base;
+      return { ...rest, tax, form };
     }
 
     function loadBilling() {
@@ -1892,6 +1913,7 @@
 
     function applyUIState() {
       const form = UI_STATE.form || {};
+      elements.toggleTva.checked = UI_STATE.tax?.enabled ?? false;
       elements.service.value = form.service || "visual";
       elements.pack.value = form.pack || "standard";
       elements.nbVisuels.value = form.nbVisuels ?? 0;
@@ -1924,11 +1946,16 @@
       elements.optAnimation.checked = form.optAnimation ?? false;
       elements.animSeconds.value = form.animSeconds ?? 0;
       elements.clientName.value = form.clientName || "";
-      elements.tvaRate.value = form.tvaRate ?? CONFIG.vat_rate;
-      elements.rate.value = form.rate ?? CONFIG.eur_mga_rate;
+      elements.tvaRate.value = UI_STATE.tax?.tvaRate ?? CONFIG.vat_rate;
+      elements.rate.value = UI_STATE.tax?.rate ?? CONFIG.eur_mga_rate;
     }
 
     function syncStateFromInputs() {
+      UI_STATE.tax = {
+        enabled: elements.toggleTva.checked,
+        tvaRate: Number(elements.tvaRate.value) || 0,
+        rate: Number(elements.rate.value) || CONFIG.eur_mga_rate
+      };
       UI_STATE.form = {
         service: elements.service.value,
         pack: elements.pack.value,
@@ -1961,9 +1988,7 @@
         optSources: elements.optSources.checked,
         optAnimation: elements.optAnimation.checked,
         animSeconds: Number(elements.animSeconds.value) || 0,
-        clientName: elements.clientName.value,
-        tvaRate: Number(elements.tvaRate.value) || 0,
-        rate: Number(elements.rate.value) || CONFIG.eur_mga_rate
+        clientName: elements.clientName.value
       };
     }
 
@@ -2659,12 +2684,16 @@
     function exportSnapshot() {
       syncStateFromInputs();
       syncBillingFromForm();
+      const uiSnapshot = structuredClone(UI_STATE);
+      const taxSnapshot = structuredClone(UI_STATE.tax || {});
+      delete uiSnapshot.tax;
       const payload = {
-        version: 1,
+        version: 2,
         exported_at: new Date().toISOString(),
         parameters: structuredClone(CONFIG),
         inputs: {
-          ui: structuredClone(UI_STATE),
+          ui: uiSnapshot,
+          tax: taxSnapshot,
           billing: structuredClone(BILLING)
         }
       };
@@ -2699,7 +2728,9 @@
           const data = JSON.parse(event.target.result);
           if (!data.parameters || !data.inputs) throw new Error("JSON invalide");
           CONFIG = data.parameters;
-          UI_STATE = { ...UI_DEFAULT, ...(data.inputs.ui || {}) };
+          const rawUi = data.inputs.ui || {};
+          const rawTax = data.inputs.tax || rawUi.tax;
+          UI_STATE = normalizeUIState({ ...rawUi, tax: rawTax });
           BILLING = {
             ...structuredClone(BILLING_DEFAULT),
             ...(data.inputs.billing || {}),
@@ -2942,7 +2973,7 @@
 
     function init() {
       setCurrency(UI_STATE.currency);
-      elements.toggleTva.checked = UI_STATE.showTva;
+      elements.toggleTva.checked = UI_STATE.tax?.enabled ?? false;
       const hasStoredUi = Boolean(localStorage.getItem("tk_quote_calc_ui_v1"));
       const deliverablesMedia = window.matchMedia("(max-width: 980px)");
       if (!hasStoredUi && deliverablesMedia.matches) {
@@ -2966,11 +2997,11 @@
 
       document.querySelectorAll("input, select").forEach(input => {
         input.addEventListener("input", () => {
-          UI_STATE.showTva = elements.toggleTva.checked;
+          UI_STATE.tax.enabled = elements.toggleTva.checked;
           debouncedCalculateAndRender();
         });
         input.addEventListener("change", () => {
-          UI_STATE.showTva = elements.toggleTva.checked;
+          UI_STATE.tax.enabled = elements.toggleTva.checked;
           debouncedCalculateAndRender();
         });
       });
