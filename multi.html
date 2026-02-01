@@ -393,26 +393,89 @@
     .module-typology-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
 
     .module-typology-row {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr 0.8fr 1.2fr auto;
-      gap: 10px;
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7);
+      overflow-wrap: anywhere;
     }
 
-    .module-typology-row .inline {
-      flex-wrap: nowrap;
+    .module-typology-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .module-typology-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .module-typology-title input {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .module-typology-tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.14);
+      color: #1d4ed8;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .module-typology-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .module-typology-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .module-typology-row input,
+    .module-typology-row select {
+      min-width: 0;
+    }
+
+    .module-typology-variations {
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .module-typology-variations .inline {
+      gap: 8px;
     }
 
     .module-typology-row button {
       padding: 8px 12px;
     }
 
-    .module-animation-row,
-    .module-travel-row {
+    .module-animation-row {
       display: none;
       align-items: center;
       gap: 8px;
@@ -1049,7 +1112,7 @@
       }
 
       .module-typology-row {
-        grid-template-columns: 1fr;
+        width: 100%;
       }
     }
   </style>
@@ -1104,10 +1167,10 @@
             </div>
             <div class="module-actions">
               <select class="module-type">
-                <option value="masterplan">Site Masterplan / 3D Massing</option>
-                <option value="exterior">Exterior</option>
-                <option value="interior">Interior</option>
-                <option value="visual">Visuals / Renders</option>
+                <option value="masterplan">Masterplan du site / Volumétrie 3D</option>
+                <option value="exterior">Extérieur</option>
+                <option value="interior">Intérieur</option>
+                <option value="visual">Visuels / Rendus</option>
               </select>
               <button class="btn module-duplicate" type="button">Dupliquer</button>
               <button class="btn module-collapse" type="button">Réduire</button>
@@ -1145,7 +1208,7 @@
                 <select class="module-details">
                   <option value="concept">Concept</option>
                   <option value="realistic">Réaliste</option>
-                  <option value="photoreal">Photoreal</option>
+                  <option value="photoreal">Photoréaliste</option>
                 </select>
               </div>
               <div>
@@ -1228,15 +1291,15 @@
               <h4>Volumes (S/M/L)</h4>
               <div class="grid">
                 <div>
-                  <label>Small</label>
+                  <label>Petit</label>
                   <input class="module-volume-small" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Medium</label>
+                  <label>Moyen</label>
                   <input class="module-volume-medium" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Large</label>
+                  <label>Grand</label>
                   <input class="module-volume-large" type="number" min="0" value="0" />
                 </div>
                 <div class="module-m2-toggle">
@@ -1256,15 +1319,15 @@
               <h4>Scènes 3D (S/M/L)</h4>
               <div class="grid">
                 <div>
-                  <label>Small</label>
+                  <label>Petit</label>
                   <input class="module-scene-small" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Medium</label>
+                  <label>Moyen</label>
                   <input class="module-scene-medium" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Large</label>
+                  <label>Grand</label>
                   <input class="module-scene-large" type="number" min="0" value="0" />
                 </div>
               </div>
@@ -1274,15 +1337,15 @@
               <h4>Rendus finaux</h4>
               <div class="grid">
                 <div>
-                  <label>Aerial</label>
+                  <label>Vue aérienne</label>
                   <input class="module-render-aerial" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Exterior</label>
+                  <label>Extérieur</label>
                   <input class="module-render-exterior" type="number" min="0" value="0" />
                 </div>
                 <div>
-                  <label>Interior</label>
+                  <label>Intérieur</label>
                   <input class="module-render-interior" type="number" min="0" value="0" />
                 </div>
               </div>
@@ -1290,7 +1353,10 @@
 
             <div class="module-section module-typologies" data-section="typologies">
               <div class="inline" style="justify-content: space-between;">
-                <h4>Asset typologies</h4>
+                <div>
+                  <h4>Typologies d'assets</h4>
+                  <p class="helper">Décrivez les familles d'assets, même avec des intitulés longs.</p>
+                </div>
                 <label class="checkbox">
                   <input class="module-typologies-toggle" type="checkbox" />
                   Activer les typologies
@@ -1305,7 +1371,7 @@
               <div class="options">
                 <label class="checkbox"><input type="checkbox" class="module-opt-moodboard" /> Moodboard</label>
                 <label class="checkbox"><input type="checkbox" class="module-opt-plan" /> Plan 2D</label>
-                <label class="checkbox"><input type="checkbox" class="module-opt-shopping" /> Shopping list</label>
+                <label class="checkbox"><input type="checkbox" class="module-opt-shopping" /> Liste shopping</label>
                 <label class="checkbox"><input type="checkbox" class="module-opt-modeling" /> Modélisation sur mesure</label>
                 <label class="checkbox"><input type="checkbox" class="module-opt-furniture" /> Mobilier / déco</label>
                 <label class="checkbox"><input type="checkbox" class="module-opt-landscape" /> Paysage / végétation</label>
@@ -1324,16 +1390,6 @@
                 <div>
                   <label>Cycles demandés</label>
                   <input class="module-cycles" type="number" min="1" value="2" />
-                </div>
-                <div>
-                  <label class="checkbox">
-                    <input class="module-travel-toggle" type="checkbox" />
-                    Déplacement
-                  </label>
-                  <div class="inline module-travel-row">
-                    <input class="module-travel-km" type="number" min="0" value="0" />
-                    <span class="helper">km</span>
-                  </div>
                 </div>
               </div>
               <span class="helper">Cycles inclus : <strong class="module-cycles-included">2</strong></span>
@@ -1519,7 +1575,7 @@
           </div>
           <label class="checkbox">
             <input type="checkbox" id="invoice-show-details" />
-            Afficher détail (Base/Production/Options/Retours/Frais/TVA)
+            Afficher détail (Base/Production/Options/Retours/TVA)
           </label>
           <div>
             <label for="invoice-notes">Notes / conditions</label>
@@ -1628,7 +1684,7 @@
         }
       },
       typologies: {
-        categories: ["Building", "Unit", "Pavilion", "Landscape element", "Furniture set"],
+        categories: ["Bâtiment", "Unité", "Pavillon", "Élément paysager", "Ensemble mobilier"],
         complexity_costs: { simple: 180000, standard: 260000, complex: 380000 },
         duplication_mode: "fixed",
         duplication_fee: { simple: 60000, standard: 80000, complex: 120000 },
@@ -1652,7 +1708,6 @@
         animation_sec: 40000
       },
       revisions: { included: 2, rate: 0.1 },
-      travel: { flat: 50000, km: 1500 },
       minimum: 350000,
       vat_enabled: false,
       vat_rate: 0,
@@ -1665,11 +1720,11 @@
       ],
       presets: [
         {
-          name: "Site Masterplan",
+          name: "Masterplan du site",
           modules: [
             {
               type: "masterplan",
-              name: "Site Masterplan",
+              name: "Masterplan du site",
               resolution: "2K",
               renders: { aerial: 3, exterior: 1, interior: 0 },
               masterplan: {
@@ -1684,8 +1739,8 @@
               typologies: [
                 {
                   id: "preset-typology-1",
-                  name: "Typology A",
-                  category: "Building",
+                  name: "Typologie A",
+                  category: "Bâtiment",
                   complexity: "standard",
                   instances: 8,
                   variationsEnabled: false,
@@ -1698,11 +1753,11 @@
           ]
         },
         {
-          name: "Marketing Visual Pack",
+          name: "Pack visuels marketing",
           modules: [
             {
               type: "visual",
-              name: "Visuals Pack",
+              name: "Pack visuels",
               pack: "premium",
               resolution: "4K",
               multipliers: { details: "photoreal" },
@@ -1712,11 +1767,11 @@
           ]
         },
         {
-          name: "Full Site Package",
+          name: "Pack site complet",
           modules: [
             {
               type: "masterplan",
-              name: "Site Masterplan",
+              name: "Masterplan du site",
               pack: "premium",
               resolution: "4K",
               multipliers: { details: "photoreal" },
@@ -1733,8 +1788,8 @@
               typologies: [
                 {
                   id: "preset-typology-2",
-                  name: "Typology A",
-                  category: "Building",
+                  name: "Typologie A",
+                  category: "Bâtiment",
                   complexity: "standard",
                   instances: 12,
                   variationsEnabled: true,
@@ -1746,7 +1801,7 @@
             },
             {
               type: "exterior",
-              name: "Exterior",
+              name: "Extérieur",
               pack: "premium",
               resolution: "4K",
               multipliers: { details: "photoreal" },
@@ -1755,7 +1810,7 @@
             },
             {
               type: "interior",
-              name: "Interior",
+              name: "Intérieur",
               pack: "premium",
               resolution: "4K",
               multipliers: { details: "photoreal" },
@@ -1932,10 +1987,16 @@
     };
 
     const MODULE_LABELS = {
-      masterplan: "Site Masterplan / 3D Massing",
-      exterior: "Exterior",
-      interior: "Interior",
-      visual: "Visuals / Renders"
+      masterplan: "Masterplan du site / Volumétrie 3D",
+      exterior: "Extérieur",
+      interior: "Intérieur",
+      visual: "Visuels / Rendus"
+    };
+
+    const RENDER_LABELS = {
+      aerial: "Aérien",
+      exterior: "Extérieur",
+      interior: "Intérieur"
     };
 
     function generateId() {
@@ -1982,7 +2043,6 @@
         typologies: structuredClone(CONFIG_DEFAULT.typologies),
         options: deepMerge(CONFIG_DEFAULT.options, config.options || {}),
         revisions: config.revisions || CONFIG_DEFAULT.revisions,
-        travel: config.travel || CONFIG_DEFAULT.travel,
         minimum: config.minimum ?? CONFIG_DEFAULT.minimum,
         vat_enabled: config.vat_enabled ?? CONFIG_DEFAULT.vat_enabled,
         vat_rate: config.vat_rate ?? CONFIG_DEFAULT.vat_rate,
@@ -2206,8 +2266,7 @@
           animation: false
         },
         animationSeconds: 0,
-        revisions: { cycles: CONFIG.revisions?.included ?? 2 },
-        travel: { enabled: false, km: 0 }
+        revisions: { cycles: CONFIG.revisions?.included ?? 2 }
       };
       return deepMerge(defaultModule, overrides);
     }
@@ -2225,7 +2284,6 @@
         },
         m2: { enabled: Boolean(form.toggleM2), value: Number(form.m2Value) || 0 },
         revisions: { cycles: Number(form.cycles) || CONFIG.revisions.included },
-        travel: { enabled: Boolean(form.optTravel), km: Number(form.travelKm) || 0 },
         options: {
           moodboard: Boolean(form.optMoodboard),
           plan2d: Boolean(form.optPlan),
@@ -2548,12 +2606,7 @@
       const cyclesExtra = Math.max(0, cyclesAsked - CONFIG.revisions.included);
       const revisions = cyclesExtra * (base + production) * CONFIG.revisions.rate;
 
-      let fees = 0;
-      if (module.travel.enabled) {
-        fees = CONFIG.travel.flat + (Number(module.travel.km) || 0) * CONFIG.travel.km;
-      }
-
-      const total = subTotal + options + revisions + fees;
+      const total = subTotal + options + revisions;
 
       return {
         id: module.id,
@@ -2569,7 +2622,6 @@
         subTotal,
         options,
         revisions,
-        fees,
         total
       };
     }
@@ -2649,9 +2701,6 @@
             `<div class="summary-item sub"><span>Retours</span><span>${formatCurrency(module.revisions)}</span></div>`
           );
         }
-        if (module.fees) {
-          detailLines.push(`<div class="summary-item sub"><span>Frais</span><span>${formatCurrency(module.fees)}</span></div>`);
-        }
       });
       if (project.minimumApplied) {
         detailLines.push(
@@ -2688,9 +2737,9 @@
 
       const summaryItems = [
         `Modules : ${project.modules.length}`,
-        `Rendus Aerial : ${totalRenders.aerial}`,
-        `Rendus Exterior : ${totalRenders.exterior}`,
-        `Rendus Interior : ${totalRenders.interior}`
+        `Rendus aériens : ${totalRenders.aerial}`,
+        `Rendus extérieurs : ${totalRenders.exterior}`,
+        `Rendus intérieurs : ${totalRenders.interior}`
       ];
       const resolutionLabel = Array.from(resolutionBadges).join(" / ");
       if (resolutionLabel) {
@@ -2755,7 +2804,7 @@
       const renderItems = [];
       const totalRenders = Object.entries(moduleState.renders)
         .filter(([, value]) => Number(value) > 0)
-        .map(([category, value]) => `${category} : ${value}`);
+        .map(([category, value]) => `${RENDER_LABELS[category] || category} : ${value}`);
       if (totalRenders.length) {
         renderItems.push(`Rendus : ${totalRenders.join(" / ")}`);
         renderItems.push(`Résolution : ${moduleState.resolution}`);
@@ -2767,7 +2816,7 @@
       const optionItems = [];
       if (moduleState.options.moodboard) optionItems.push("Moodboard détaillé");
       if (moduleState.options.plan2d) optionItems.push("Plan 2D");
-      if (moduleState.options.shopping) optionItems.push("Shopping list");
+      if (moduleState.options.shopping) optionItems.push("Liste shopping");
       if (moduleState.options.modeling) optionItems.push("Modélisation sur mesure");
       if (moduleState.options.furniture) optionItems.push("Mobilier / déco");
       if (moduleState.options.landscape) optionItems.push("Paysage / végétation");
@@ -2830,7 +2879,6 @@
       card.querySelector(".module-m2-toggle").style.display = showVolumes ? "block" : "none";
       card.querySelector(".module-m2-field").style.display = showVolumes && module.m2.enabled ? "block" : "none";
       card.querySelector(".module-animation-row").style.display = module.options.animation ? "flex" : "none";
-      card.querySelector(".module-travel-row").style.display = module.travel.enabled ? "flex" : "none";
       card.querySelector(".module-typologies-toggle").closest("label").style.display = showTypologies ? "flex" : "none";
       card.querySelector(".module-typology-list").style.display = module.typologiesEnabled ? "flex" : "none";
       card.querySelector(".module-add-typology").style.display = module.typologiesEnabled ? "inline-flex" : "none";
@@ -2844,28 +2892,47 @@
         row.className = "module-typology-row";
         row.dataset.typologyId = typology.id;
         row.innerHTML = `
-          <input type="text" placeholder="Nom" value="${typology.name || ""}" />
-          <select>
-            ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}
-          </select>
-          <select>
-            <option value="simple">Simple</option>
-            <option value="standard">Standard</option>
-            <option value="complex">Complexe</option>
-          </select>
-          <input type="number" min="1" value="${typology.instances || 1}" />
-          <div class="inline">
-            <label class="checkbox">
-              <input type="checkbox" ${typology.variationsEnabled ? "checked" : ""} />
-              Variations
-            </label>
-            <select>
-              <option value="percent">%</option>
-              <option value="fixed">Fixe</option>
-            </select>
-            <input type="number" min="0" value="${typology.variationValue ?? CONFIG.typologies.variation_value}" />
+          <div class="module-typology-header">
+            <div class="module-typology-title">
+              <span class="module-typology-tag">Typologie</span>
+              <input type="text" placeholder="Nom de la typologie" value="${typology.name || ""}" />
+            </div>
+            <button class="btn" type="button">Supprimer</button>
           </div>
-          <button class="btn" type="button">Supprimer</button>
+          <div class="module-typology-grid">
+            <div class="module-typology-field">
+              <label>Catégorie</label>
+              <select>
+                ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}
+              </select>
+            </div>
+            <div class="module-typology-field">
+              <label>Complexité</label>
+              <select>
+                <option value="simple">Simple</option>
+                <option value="standard">Standard</option>
+                <option value="complex">Complexe</option>
+              </select>
+            </div>
+            <div class="module-typology-field">
+              <label>Quantité</label>
+              <input type="number" min="1" value="${typology.instances || 1}" />
+            </div>
+            <div class="module-typology-field module-typology-variations">
+              <label class="checkbox">
+                <input type="checkbox" ${typology.variationsEnabled ? "checked" : ""} />
+                Variantes
+              </label>
+              <div class="inline">
+                <select>
+                  <option value="percent">%</option>
+                  <option value="fixed">Fixe</option>
+                </select>
+                <input type="number" min="0" value="${typology.variationValue ?? CONFIG.typologies.variation_value}" />
+              </div>
+              <small>Applique une variation sur la typologie sélectionnée.</small>
+            </div>
+          </div>
         `;
         const inputs = row.querySelectorAll("input, select");
         const [nameInput, categorySelect, complexitySelect, instancesInput, variationsToggle, variationMode, variationValue] = [
@@ -2972,9 +3039,6 @@
 
         card.querySelector(".module-cycles").value = module.revisions.cycles;
         card.querySelector(".module-cycles-included").textContent = CONFIG.revisions.included;
-        card.querySelector(".module-travel-toggle").checked = module.travel.enabled;
-        card.querySelector(".module-travel-km").value = module.travel.km;
-
         const typologyList = card.querySelector(".module-typology-list");
         renderTypologies(module, typologyList);
 
@@ -3163,16 +3227,6 @@
           module.revisions.cycles = Number(event.target.value) || 1;
           debouncedCalculateAndRender();
         });
-        card.querySelector(".module-travel-toggle").addEventListener("change", event => {
-          module.travel.enabled = event.target.checked;
-          updateModuleVisibility(card, module);
-          debouncedCalculateAndRender();
-        });
-        card.querySelector(".module-travel-km").addEventListener("input", event => {
-          module.travel.km = Number(event.target.value) || 0;
-          debouncedCalculateAndRender();
-        });
-
         card.querySelector(".module-duplicate").addEventListener("click", () => {
           const clone = deepMerge(module, { id: generateId(), name: `${module.name} (copie)` });
           UI_STATE.modules.push(clone);
@@ -3226,51 +3280,51 @@
         </div>`;
 
       addGroup("Bases", [
-        inputField("Base visuals", "base.visual"),
-        inputField("Base interior", "base.interior"),
-        inputField("Base exterior", "base.exterior")
+        inputField("Base visuels", "base.visual"),
+        inputField("Base intérieur", "base.interior"),
+        inputField("Base extérieur", "base.exterior")
       ]);
 
       addGroup("Scènes 3D", [
-        inputField("Scene small", "scenes.small"),
-        inputField("Scene medium", "scenes.medium"),
-        inputField("Scene large", "scenes.large")
+        inputField("Scène petite", "scenes.small"),
+        inputField("Scène moyenne", "scenes.medium"),
+        inputField("Scène grande", "scenes.large")
       ]);
 
       addGroup("Pack intérieur - Concept", [
-        inputField("Small", "packs.interior.concept.small"),
-        inputField("Medium", "packs.interior.concept.medium"),
-        inputField("Large", "packs.interior.concept.large")
+        inputField("Petit", "packs.interior.concept.small"),
+        inputField("Moyen", "packs.interior.concept.medium"),
+        inputField("Grand", "packs.interior.concept.large")
       ]);
 
       addGroup("Pack intérieur - Standard", [
-        inputField("Small", "packs.interior.standard.small"),
-        inputField("Medium", "packs.interior.standard.medium"),
-        inputField("Large", "packs.interior.standard.large")
+        inputField("Petit", "packs.interior.standard.small"),
+        inputField("Moyen", "packs.interior.standard.medium"),
+        inputField("Grand", "packs.interior.standard.large")
       ]);
 
       addGroup("Pack intérieur - Premium", [
-        inputField("Small", "packs.interior.premium.small"),
-        inputField("Medium", "packs.interior.premium.medium"),
-        inputField("Large", "packs.interior.premium.large")
+        inputField("Petit", "packs.interior.premium.small"),
+        inputField("Moyen", "packs.interior.premium.medium"),
+        inputField("Grand", "packs.interior.premium.large")
       ]);
 
       addGroup("Pack extérieur - Concept", [
-        inputField("Small", "packs.exterior.concept.small"),
-        inputField("Medium", "packs.exterior.concept.medium"),
-        inputField("Large", "packs.exterior.concept.large")
+        inputField("Petit", "packs.exterior.concept.small"),
+        inputField("Moyen", "packs.exterior.concept.medium"),
+        inputField("Grand", "packs.exterior.concept.large")
       ]);
 
       addGroup("Pack extérieur - Standard", [
-        inputField("Small", "packs.exterior.standard.small"),
-        inputField("Medium", "packs.exterior.standard.medium"),
-        inputField("Large", "packs.exterior.standard.large")
+        inputField("Petit", "packs.exterior.standard.small"),
+        inputField("Moyen", "packs.exterior.standard.medium"),
+        inputField("Grand", "packs.exterior.standard.large")
       ]);
 
       addGroup("Pack extérieur - Premium", [
-        inputField("Small", "packs.exterior.premium.small"),
-        inputField("Medium", "packs.exterior.premium.medium"),
-        inputField("Large", "packs.exterior.premium.large")
+        inputField("Petit", "packs.exterior.premium.small"),
+        inputField("Moyen", "packs.exterior.premium.medium"),
+        inputField("Grand", "packs.exterior.premium.large")
       ]);
 
       addGroup("Masterplan : base & surface", [
@@ -3289,21 +3343,21 @@
         inputField("Zone parking", "masterplan.unit_costs.parking_zones")
       ]);
 
-      addGroup("Rendus - paliers Aerial", [
+      addGroup("Rendus - paliers aériens", [
         inputField("Jusqu'à 2", "render_tiers.aerial.0.unit"),
         inputField("Jusqu'à 6", "render_tiers.aerial.1.unit"),
         inputField("Jusqu'à 12", "render_tiers.aerial.2.unit"),
         inputField("Au-delà", "render_tiers.aerial.3.unit")
       ]);
 
-      addGroup("Rendus - paliers Exterior", [
+      addGroup("Rendus - paliers extérieurs", [
         inputField("Jusqu'à 2", "render_tiers.exterior.0.unit"),
         inputField("Jusqu'à 6", "render_tiers.exterior.1.unit"),
         inputField("Jusqu'à 12", "render_tiers.exterior.2.unit"),
         inputField("Au-delà", "render_tiers.exterior.3.unit")
       ]);
 
-      addGroup("Rendus - paliers Interior", [
+      addGroup("Rendus - paliers intérieurs", [
         inputField("Jusqu'à 2", "render_tiers.interior.0.unit"),
         inputField("Jusqu'à 6", "render_tiers.interior.1.unit"),
         inputField("Jusqu'à 12", "render_tiers.interior.2.unit"),
@@ -3321,15 +3375,15 @@
       ]);
 
       addGroup("Résolution par catégorie (uplift)", [
-        inputField("Aerial 2K", "resolution_pricing.uplifts_by_category.aerial.2K"),
-        inputField("Aerial 4K", "resolution_pricing.uplifts_by_category.aerial.4K"),
-        inputField("Exterior 2K", "resolution_pricing.uplifts_by_category.exterior.2K"),
-        inputField("Exterior 4K", "resolution_pricing.uplifts_by_category.exterior.4K"),
-        inputField("Interior 2K", "resolution_pricing.uplifts_by_category.interior.2K"),
-        inputField("Interior 4K", "resolution_pricing.uplifts_by_category.interior.4K")
+        inputField("Aérien 2K", "resolution_pricing.uplifts_by_category.aerial.2K"),
+        inputField("Aérien 4K", "resolution_pricing.uplifts_by_category.aerial.4K"),
+        inputField("Extérieur 2K", "resolution_pricing.uplifts_by_category.exterior.2K"),
+        inputField("Extérieur 4K", "resolution_pricing.uplifts_by_category.exterior.4K"),
+        inputField("Intérieur 2K", "resolution_pricing.uplifts_by_category.interior.2K"),
+        inputField("Intérieur 4K", "resolution_pricing.uplifts_by_category.interior.4K")
       ]);
 
-      addGroup("Résolution - unités Aerial (HD/2K/4K)", [
+      addGroup("Résolution - unités aériennes (HD/2K/4K)", [
         inputField("HD palier 1", "resolution_pricing.per_resolution_units.aerial.HD.0"),
         inputField("HD palier 2", "resolution_pricing.per_resolution_units.aerial.HD.1"),
         inputField("HD palier 3", "resolution_pricing.per_resolution_units.aerial.HD.2"),
@@ -3344,7 +3398,7 @@
         inputField("4K palier 4", "resolution_pricing.per_resolution_units.aerial.4K.3")
       ]);
 
-      addGroup("Résolution - unités Exterior (HD/2K/4K)", [
+      addGroup("Résolution - unités extérieures (HD/2K/4K)", [
         inputField("HD palier 1", "resolution_pricing.per_resolution_units.exterior.HD.0"),
         inputField("HD palier 2", "resolution_pricing.per_resolution_units.exterior.HD.1"),
         inputField("HD palier 3", "resolution_pricing.per_resolution_units.exterior.HD.2"),
@@ -3359,7 +3413,7 @@
         inputField("4K palier 4", "resolution_pricing.per_resolution_units.exterior.4K.3")
       ]);
 
-      addGroup("Résolution - unités Interior (HD/2K/4K)", [
+      addGroup("Résolution - unités intérieures (HD/2K/4K)", [
         inputField("HD palier 1", "resolution_pricing.per_resolution_units.interior.HD.0"),
         inputField("HD palier 2", "resolution_pricing.per_resolution_units.interior.HD.1"),
         inputField("HD palier 3", "resolution_pricing.per_resolution_units.interior.HD.2"),
@@ -3380,7 +3434,7 @@
         inputField("Complexité complexe", "multipliers.complexity.complex"),
         inputField("Détails concept", "multipliers.details.concept"),
         inputField("Détails réaliste", "multipliers.details.realistic"),
-        inputField("Détails photoreal", "multipliers.details.photoreal"),
+        inputField("Détails photoréaliste", "multipliers.details.photoreal"),
         inputField("Délai standard", "multipliers.delay.standard"),
         inputField("Délai express", "multipliers.delay.express"),
         inputField("Délai urgent", "multipliers.delay.urgent"),
@@ -3401,7 +3455,7 @@
       addGroup("Options", [
         inputField("Moodboard", "options.moodboard"),
         inputField("Plan 2D", "options.plan2d"),
-        inputField("Shopping list", "options.shopping"),
+        inputField("Liste shopping", "options.shopping"),
         inputField("Modélisation (%)", "options.modeling_pct"),
         inputField("Mobilier (%)", "options.furniture_pct"),
         inputField("Paysage (%)", "options.landscape_pct"),
@@ -3409,11 +3463,9 @@
         inputField("Animation / seconde", "options.animation_sec")
       ]);
 
-      addGroup("Retours & déplacements", [
+      addGroup("Retours & minimum", [
         inputField("Cycles inclus", "revisions.included"),
         inputField("Majoration retours", "revisions.rate"),
-        inputField("Déplacement forfait", "travel.flat"),
-        inputField("Déplacement / km", "travel.km"),
         inputField("Minimum facturé", "minimum")
       ]);
 
@@ -3637,7 +3689,7 @@
         const renderCounts = moduleState
           ? Object.entries(moduleState.renders)
               .filter(([, value]) => Number(value) > 0)
-              .map(([category, value]) => `${category}: ${value}`)
+              .map(([category, value]) => `${RENDER_LABELS[category] || category}: ${value}`)
               .join(" / ")
           : "";
         const label = `${module.name || MODULE_LABELS[module.type]} — ${module.resolution}`;
@@ -3650,7 +3702,6 @@
           }
           if (module.options) lines.push({ label: "— Options", amount: module.options });
           if (module.revisions) lines.push({ label: "— Retours", amount: module.revisions });
-          if (module.fees) lines.push({ label: "— Frais", amount: module.fees });
         }
       });
       if (showTva) {
