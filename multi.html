@@ -1091,6 +1091,19 @@
       border-radius: 999px;
     }
 
+    .tag.is-capped {
+      background: rgba(248, 113, 113, 0.16);
+      color: #b91c1c;
+    }
+
+    @media print {
+      body { padding: 0; background: #fff !important; }
+      .settings-overlay { position: static; inset: auto; background: none; }
+      .billing-panel { box-shadow: none; }
+      .invoice { box-shadow: none; border: none; }
+      button, .billing-actions { display: none !important; }
+    }
+
 
     @media (max-width: 980px) {
       .content {
@@ -1174,6 +1187,7 @@
           <div class="module-header">
             <div class="module-title">
               <span class="tag">Module</span>
+              <span class="tag is-capped module-cap-tag" style="display: none;">Plafonné</span>
               <input class="module-name" type="text" placeholder="Nom du module" />
             </div>
             <div class="module-actions">
@@ -2847,6 +2861,7 @@
         module
       );
       let production = 0;
+      let capped = false;
       const breakdown = {
         volumes: 0,
         scenes: 0,
@@ -2979,6 +2994,7 @@
       if (total > MAX_MODULE_TOTAL_MGA) {
         total = MAX_MODULE_TOTAL_MGA;
         markCapped();
+        capped = true;
       }
 
       return {
@@ -2995,7 +3011,8 @@
         subTotal,
         options,
         revisions: safeRevisions,
-        total
+        total,
+        capped
       };
     }
 
@@ -3233,6 +3250,10 @@
         if (!card) return;
         const subtotalEl = card.querySelector(".module-subtotal");
         if (subtotalEl) subtotalEl.textContent = formatCurrency(moduleCalc.total);
+        const cappedTag = card.querySelector(".module-cap-tag");
+        if (cappedTag) {
+          cappedTag.style.display = moduleCalc.capped ? "inline-flex" : "none";
+        }
         const moduleState = UI_STATE.modules.find(item => item.id === moduleCalc.id);
         if (moduleState) {
           renderModuleDeliverables(moduleState);
@@ -4113,6 +4134,17 @@
 
     function openBilling() {
       elements.billingOverlay.style.display = "flex";
+      if (!BILLING.client.client_name && UI_STATE.clientName) {
+        BILLING.client.client_name = UI_STATE.clientName;
+      }
+      if (!BILLING.invoice.notes) {
+        const referenceLine = UI_STATE.clientName ? `Référence : ${UI_STATE.clientName}` : "";
+        BILLING.invoice.notes = [referenceLine, "Merci pour votre confiance."].filter(Boolean).join("\n");
+      }
+      if (UI_STATE.clientName && (!Array.isArray(BILLING.customFields) || BILLING.customFields.length === 0)) {
+        BILLING.customFields = [{ label: "Référence", value: UI_STATE.clientName }];
+      }
+      saveBilling();
       ensureInvoiceDefaults();
       applyBillingState();
       updateInvoicePreview();
@@ -4400,6 +4432,13 @@
               .invoice-total td { border-top: 1px solid #cbd5f5; }
               .invoice-footer { display: flex; flex-direction: column; gap: 10px; }
               .invoice-note { font-size: 0.85rem; color: #64748b; white-space: pre-wrap; }
+              @media print {
+                body { padding: 0; background: #fff !important; }
+                .settings-overlay { position: static; inset: auto; background: none; }
+                .billing-panel { box-shadow: none; }
+                .invoice { box-shadow: none; border: none; break-inside: avoid; page-break-inside: avoid; }
+                button, .billing-actions { display: none !important; }
+              }
             </style>
           </head>
           <body>
