@@ -1702,6 +1702,12 @@
           { upTo: 30000, unit: 900 },
           { upTo: Infinity, unit: 700 }
         ],
+        area_tiers_ha: [
+          { upTo: 30, unit: 100000 },
+          { upTo: 80, unit: 60000 },
+          { upTo: 200, unit: 30000 },
+          { upTo: Infinity, unit: 20000 }
+        ],
         unit_costs: {
           primary_structures: 180000,
           secondary_structures: 120000,
@@ -1950,8 +1956,8 @@
       volumes: { min: 0, max: 200 },
       scenes: { min: 0, max: 200 },
       animationSeconds: { min: 0, max: 120 },
-      masterplanAreaM2: { min: 0, max: 300000 },
-      masterplanAreaHa: { min: 0, max: 30 },
+      masterplanAreaM2: { min: 0, max: 5000000 },
+      masterplanAreaHa: { min: 0, max: 500 },
       masterplanStructures: { min: 0, max: 200 },
       m2Value: { min: 0, max: 5000 },
       typologyInstances: { min: 0, max: 300 },
@@ -2872,12 +2878,14 @@
       };
 
       if (module.type === "masterplan") {
-        const areaValue =
-          module.masterplan.areaUnit === "ha"
-            ? sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaHa.min, LIMITS.masterplanAreaHa.max)
-            : sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaM2.min, LIMITS.masterplanAreaM2.max);
-        const areaM2 = module.masterplan.areaUnit === "ha" ? areaValue * 10000 : areaValue;
-        breakdown.area = applyTieredPricing(areaM2, CONFIG.masterplan.area_tiers);
+        const isHa = module.masterplan.areaUnit === "ha";
+        const areaValue = isHa
+          ? sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaHa.min, LIMITS.masterplanAreaHa.max)
+          : sanitizeNumberWithFlag(module.masterplan.area, LIMITS.masterplanAreaM2.min, LIMITS.masterplanAreaM2.max);
+        const areaM2 = isHa ? areaValue * 10000 : areaValue;
+        const haTiers = CONFIG.masterplan.area_tiers_ha;
+        const useHaTiers = isHa && Array.isArray(haTiers) && haTiers.length > 0;
+        breakdown.area = applyTieredPricing(useHaTiers ? areaValue : areaM2, useHaTiers ? haTiers : CONFIG.masterplan.area_tiers);
         breakdown.area = ensureFinite(breakdown.area, "masterplan.area", module);
         breakdown.program =
           sanitizeIntWithFlag(
@@ -3884,6 +3892,15 @@
         inputField("Surface jusqu'à (m²) - palier 2", "masterplan.area_tiers.1.upTo"),
         inputField("Prix/m² palier 2", "masterplan.area_tiers.1.unit"),
         inputField("Prix/m² palier 3", "masterplan.area_tiers.2.unit")
+      ]);
+      addGroup("Masterplan : surface (ha)", [
+        inputField("Surface jusqu'à (ha) - palier 1", "masterplan.area_tiers_ha.0.upTo"),
+        inputField("Prix/ha palier 1", "masterplan.area_tiers_ha.0.unit"),
+        inputField("Surface jusqu'à (ha) - palier 2", "masterplan.area_tiers_ha.1.upTo"),
+        inputField("Prix/ha palier 2", "masterplan.area_tiers_ha.1.unit"),
+        inputField("Surface jusqu'à (ha) - palier 3", "masterplan.area_tiers_ha.2.upTo"),
+        inputField("Prix/ha palier 3", "masterplan.area_tiers_ha.2.unit"),
+        inputField("Prix/ha palier 4", "masterplan.area_tiers_ha.3.unit")
       ]);
 
       addGroup("Masterplan : coûts unitaires", [
