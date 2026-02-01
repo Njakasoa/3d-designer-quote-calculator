@@ -4183,6 +4183,13 @@
 
     function exportSnapshot() {
       syncBillingFromForm();
+      const rawProjectName = elements.clientName.value || UI_STATE.clientName || "devis";
+      const safeProjectName = rawProjectName
+        .trim()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9_-]/g, "")
+        .toLowerCase() || "devis";
+      const exportDate = new Date().toISOString().slice(0, 10);
       const payload = {
         version: 2,
         exported_at: new Date().toISOString(),
@@ -4195,7 +4202,7 @@
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "devis_parametres_champs.json";
+      link.download = `${safeProjectName}_${exportDate}.json`;
       link.click();
     }
 
