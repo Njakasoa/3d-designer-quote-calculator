@@ -1954,6 +1954,16 @@
     };
     let pendingAdjustment = false;
 
+    function generateId() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      return `m_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    const clone = obj => {
+      if (window.structuredClone) return structuredClone(obj);
+      return JSON.parse(JSON.stringify(obj));
+    };
+
     let CONFIG = loadConfig();
     let UI_STATE = loadUIState();
     let BILLING = loadBilling();
@@ -2033,16 +2043,6 @@
       aerial: "Aérien",
       exterior: "Extérieur",
       interior: "Intérieur"
-    };
-
-    function generateId() {
-      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
-      return `m_${Math.random().toString(36).slice(2, 10)}`;
-    }
-
-    const clone = obj => {
-      if (window.structuredClone) return structuredClone(obj);
-      return JSON.parse(JSON.stringify(obj));
     };
 
     function deepMerge(target, source) {
